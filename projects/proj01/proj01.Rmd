@@ -1,0 +1,232 @@
+---
+title: "SMCB Project 1"
+date: February 24, 2023
+output: pdf_document
+---
+
+# Problem 1: Conditional independence and BNs
+
+$A \perp B | C$ holds for **(a)** and $A \perp B$ holds for **(b)**.
+
+## (a)
+
+From the BN, we know that
+
+$$
+P(A,B,C) = P(A|C) P(B|C) P(C)
+$$
+
+To prove that $A \perp B | C$, we need to show that $P(A, B|C) = P(A|C)P(B|C)$.
+
+$$
+\begin{aligned}
+P(A,B|C) &= \frac{P(A, B, C)}{P(C)} \\
+&= \frac{P(A|C)P(B|C)P(C)}{P(C)} \\
+&= P(A|C)P(B|C)
+\end{aligned}
+$$
+
+## (b)
+
+From the BN, we know that
+
+$$
+P(A,B,C) = P(A)P(B)P(C|A,B)
+$$
+
+We know from Bayes theorem that $P(A, B, C) = P(C|A,B)P(A,B)$.
+
+Hence we have:
+
+$$
+P(C|A,B)P(A)P(B) = P(C|A,B)P(A,B)
+$$
+
+i.e., $P(A, B) = P(A)P(B)$. We have consequently proven that $A \perp B$.
+
+# Problem 2: Markov blanket
+
+The Markov balnket $MB(D)$ is ${B, C, E, F, G}$, where $B$ and $F$ are the parents of $D$, $C$ and $G$ are the children of $D$, and $E$ is the co-parent of $D$.
+
+To prove  that the conditional probability of $P(X_k|X_{n\neq k})$ is equivalent to $P(X_k|MB(X_k))$, we can prove that $\forall X_{j}$ where $j \in [1, n], j\neq k$, if $X_j \notin MB(X_k)$, then $X_j \perp X_k | MB(X_k)$.
+
+For this specific question, we need to prove that $A \perp D | MB(D)$. It is obvious that $A \perp D | MB(D)$ because $A$ and $D$ are d-separated given $MB(D)$ since $E \in MB(D)$ is on the (only) path from $A$ to $D$ and $E$ is in a cascade structure $A \rightarrow E \rightarrow G$.
+
+# Problem 3
+
+## Package and Dataset Preparation
+
+```{r echo=FALSE, results='hide', fig.keep='all', message=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install(c("graph", "Rgraphviz", "RBGL"), 
+                     update = FALSE)
+```
+
+
+```{r}
+list.of.packages <- c("GGally", "BiDAG", "igraph")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+```
+
+```{r}
+library(GGally)
+library(BiDAG)
+library(igraph)
+```
+
+```{r}
+set.seed(2023)
+```
+
+```{r}
+df <- read.csv(file="dataset.csv")
+head(df)
+```
+
+## (a)
+
+Number of variables ($n$): $11$
+Number of observations ($N$): $902$
+
+```{r}
+str(df)
+```
+
+Visualization of the transformed data using `ggpairs` function.
+
+```{r results='hide', fig.keep='all', message=FALSE}
+ggpairs(df)
+```
+
+Randomly split the data into 80% traning data and 20% test data.
+
+```{r}
+train_data_size <- floor(0.8*nrow(df))
+picked <- sample(seq_len(nrow(df)), size=train_data_size)
+train_data <- df[picked, ]
+test_data  <- df[-picked,]
+```
+
+Initialize the parameters using the function `BiDAG::scoreparameters` with the training data and the Bayesian Gaussian equivalent (BGe) score.
+
+```{r}
+train_scorepar <- BiDAG::scoreparameters(scoretype="bge", train_data)
+test_scorepar <- BiDAG::scoreparameters(scoretype="bge", test_data)
+```
+
+## (b)
+
+Learn a Bayesian network using the `BiDAG::iterativeMCMC` function.
+
+```{r}
+BN <- BiDAG::iterativeMCMC(scorepar=train_scorepar)
+```
+
+Plot the DAG.
+
+```{r}
+DAG <- BiDAG::getDAG(BN)
+g <- igraph::graph.adjacency(DAG, mode="directed")
+test.layout <- layout_nicely(g)
+igraph::plot.igraph(g,
+                    edge.arrow.size=.5,
+                    vertex.size=30,
+                    vertex.label.cex=.5,
+                    vertex.label.color="black",
+                    layout=test.layout
+)
+```
+
+Evaluate the log score of the test data agaisnt the estimated DAG using `BiDAG::scoreagainstDAG`.
+
+```{r}
+log_score <- BiDAG::scoreagainstDAG(scorepar=test_scorepar, incidence=DAG)
+mean(log_score)
+```
+
+## (c)
+
+```{r}
+res <- data.frame(matrix(ncol=5, nrow=2))
+colnames(res) <- c(1, 2, 3, 4, 5)
+rownames(res) <- c("ecount", "logscore")
+```
+
+```{r}
+procedure <- function(am, index=1) {
+    picked <- sample(seq_len(nrow(df)), size=train_data_size)
+    train_data <- df[picked, ]
+    test_data  <- df[-picked,]
+    train_scorepar <- BiDAG::scoreparameters(
+        scoretype="bge", 
+        train_data,
+        bgepar=list(am=am, aw=NULL)
+    )
+    BN <- BiDAG::iterativeMCMC(scorepar=train_scorepar)
+    return(BN)
+}
+```
+
+
+```{r}
+list.of.packages <- c("foreach", "doParallel", "doRNG")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+```
+
+
+```{r}
+library(foreach)
+library(doParallel)
+library(doRNG)
+library(parallel)
+```
+
+```{r}
+num_cores <- detectCores()
+registerDoParallel(num_cores)
+index <- 1
+foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
+    v <- foreach (i=1:100, .combine=rbind) %dorng% {
+        picked <- sample(seq_len(nrow(df)), size=train_data_size)
+        train_data <- df[picked, ]
+        test_data  <- df[-picked,]
+        train_scorepar <- BiDAG::scoreparameters(
+            scoretype="bge", train_data,
+            bgepar=list(am=am, aw=NULL)
+        )
+        test_scorepar <- BiDAG::scoreparameters(
+            scoretype="bge", test_data,
+            bgepar=list(am=am, aw=NULL)
+        )
+        BN <- BiDAG::iterativeMCMC(scorepar=train_scorepar)
+        DAG <- BiDAG::getDAG(BN)
+        g <- igraph::graph.adjacency(DAG, mode="directed")
+        ecount <- igraph::ecount(g)
+        log_score <- BiDAG::scoreagainstDAG(
+            scorepar=test_scorepar, 
+            incidence=DAG
+        )
+        avg_log_score <- mean(log_score)
+        return(c(ecount=ecount, log_score=avg_log_score))
+    }
+    avg <- colMeans(v)
+    res[1, index] <- avg[1]
+    res[2, index] <- avg[2]
+    index <- index + 1
+}
+stopImplicitCluster()
+print(res)
+```
+
+```{r}
+scorepar <- BiDAG::scoreparameters(scoretype="bge", df, bgepar=list(am=1e-1, aw=NULL))
+BN <- BiDAG::iterativeMCMC(scorepar=scorepar)
+DAG <- BiDAG::getDAG(BN)
+g <- igraph::graph.adjacency(DAG, mode="directed")
+igraph::plot.igraph(g)
+```
