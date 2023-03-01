@@ -212,7 +212,7 @@ procedure <- function(am) {
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 index <- 1
-foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
+foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %dorng% {
     v <- foreach (i=1:100, .combine=rbind) %dorng% {
         picked <- sample(seq_len(nrow(df)), size=train_data_size)
         train_data <- df[picked, ]
