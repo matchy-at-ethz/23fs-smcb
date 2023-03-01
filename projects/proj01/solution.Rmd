@@ -4,14 +4,14 @@ date: "February 24, 2023"
 output: pdf_document
 ---
 
-```{r echo=FALSE, results='hide', message=FALSE}
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("graph", "Rgraphviz", "RBGL"), 
                      update = FALSE)
 ```
 
-```{r echo=FALSE, results='hide', message=FALSE}
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 list.of.packages <- c("foreach", "doParallel", "doRNG")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
@@ -74,7 +74,7 @@ $A \perp B | C$ does not hold, but $A \perp B$ holds
 
 ### Disproof for $A \perp B | C$
 
-Consider $A \prep B | C$, we'll have $P(A, B|C) = P(A|C)P(B|C)$.
+Consider $A \perp B | C$, we'll have $P(A, B|C) = P(A|C)P(B|C)$.
 
 From the BN and by applying Bayes theorem we can derive that:
 
@@ -164,7 +164,7 @@ test_scorepar <- BiDAG::scoreparameters(scoretype="bge", test_data)
 Learn a Bayesian network using the `BiDAG::iterativeMCMC` function.
 
 ```{r}
-BN <- iterativeMCMC(scorepar=train_scorepar)
+BN <- iterativeMCMC(scorepar=train_scorepar, verbose=FALSE)
 ```
 
 Plot the DAG.
@@ -207,12 +207,12 @@ procedure <- function(am) {
 }
 ```
 
-
-```{r}
+```{r results='hide'}
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 index <- 1
-foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %dorng% {
+foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
+    set.seed(2023)
     v <- foreach (i=1:100, .combine=rbind) %dorng% {
         picked <- sample(seq_len(nrow(df)), size=train_data_size)
         train_data <- df[picked, ]
@@ -243,15 +243,15 @@ foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %dorng% {
 }
 stopImplicitCluster()
 ```
+
 ```{r}
 colnames(res) <- c(1e-3, 1e-1, 1, 10, 1e2)
 print(res)
 ```
 
-
 ```{r}
 scorepar <- BiDAG::scoreparameters(scoretype="bge", df, bgepar=list(am=1, aw=NULL))
-BN <- BiDAG::iterativeMCMC(scorepar=scorepar)
+BN <- BiDAG::iterativeMCMC(scorepar=scorepar, verbose=FALSE)
 DAG <- BiDAG::getDAG(BN)
 g <- graphAM(adjMat = as.matrix(DAG),
              edgemode = "directed",
