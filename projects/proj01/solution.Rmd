@@ -170,11 +170,9 @@ BN <- iterativeMCMC(scorepar=train_scorepar, verbose=FALSE)
 Plot the DAG.
 
 ```{r}
-DAG <- getDAG(BN)
-g <- graphAM(adjMat = as.matrix(DAG),
-             edgemode = "directed",
-             values = NA)
-plot(g)
+DAG <- getDAG(BN, amat=TRUE)
+g <- graph.adjacency(DAG, mode="directed")
+plot.igraph(g, edge.arrow.size=.5)
 ```
 
 Evaluate the log score of the test data against the estimated DAG using `BiDAG::scoreagainstDAG`.
@@ -185,6 +183,8 @@ mean(log_score)
 ```
 
 ## (c)
+
+The following code blocks run 100 iterations for each experiments.
 
 ```{r}
 res <- data.frame(matrix(ncol=5, nrow=2))
@@ -249,12 +249,14 @@ colnames(res) <- c(1e-3, 1e-1, 1, 10, 1e2)
 print(res)
 ```
 
+It seems that as `am` increase, the average number of edges also increases. The log score seems to have an optimum at `aw=1` for the parameters we tested.
+
+The final graph from the whole dataset is visualized in the following code block.
+
 ```{r}
 scorepar <- BiDAG::scoreparameters(scoretype="bge", df, bgepar=list(am=1, aw=NULL))
 BN <- BiDAG::iterativeMCMC(scorepar=scorepar, verbose=FALSE)
-DAG <- BiDAG::getDAG(BN)
-g <- graphAM(adjMat = as.matrix(DAG),
-             edgemode = "directed",
-             values = NA)
-plot(g)
+DAG <- BiDAG::getDAG(BN, amat=TRUE)
+g <- graph.adjacency(DAG, mode="directed")
+plot.igraph(g, edge.arrow.size=.5)
 ```
