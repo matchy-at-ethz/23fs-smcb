@@ -1,0 +1,130 @@
+---
+title: "Project 2 EM Algorithm"
+output: pdf_document
+---
+
+In this problem, you will implement the EM algorithm for the coin toss problem in R.
+
+Below we provide you with a skeleton of the algorithm. You can either fill this skeleton with the required functions or write your own version of the EM algorithm. If you choose to do the latter, please also present your results using Rmarkdown in a clear fashion.
+
+```{r}
+set.seed(2023)
+```
+
+## (a) Load data
+
+We first read the data stored in the file "coinflip.csv". 
+
+```{r}
+# read the data into D
+D <- ## YOUR CODE ##
+# check the dimension of D
+all(dim(D) == c(200, 100))
+```
+
+## (b) Initialize parameters
+
+Next, we will need to initialize the mixture weights and the probabilities of obtaining heads. You can choose your own values as long as they make sense.
+
+```{r}
+# Number of coins
+k <- 2
+# Mixture weights (a vector of length k)
+lambda <- ## YOUR CODE ##
+# Probabilities of obtaining heads (a vector of length k)
+theta <- ## YOUR CODE ##
+```
+
+## (c) The EM algorithm
+
+Now we try to implement the EM algorithm. Please write your code in the indicated blocks.
+
+```{r}
+##' This function implements the EM algorithm for the coin toss problem
+##' @param D Data matrix of dimensions 100-by-N, where N is the number of observations
+##' @param k Number of coins
+##' @param lambda Vector of mixture weights
+##' @param theta Vector of probabilities of obtaining heads
+##' @param tolerance A threshold used to check convergence
+coin_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
+  
+  # expected complete-data (hidden) log-likelihood
+  ll_hid <- -Inf
+  # observed log-likelihood
+  ll_obs <- -Inf
+  # difference between two iterations
+  diff <- Inf
+  # number of observations
+  N <- nrow(D)
+  # responsibilities
+  gamma <- matrix(0, nrow = k, ncol = N)
+  
+  # run the E-step and M-step until convergence 
+  while (diff > tolerance) {
+    
+    # store old likelihood
+    ll_obs_old <- ll_obs
+    
+    ############# E-step #############
+    
+    ### YOUR CODE STARTS ###
+    
+    # Compute the responsibilities
+    
+    # Update expected complete-data (hidden) log-likelihood
+    
+    # Update observed log-likelihood
+    
+    # Recompute difference between two iterations
+    
+    ### YOUR CODE ENDS ###
+    
+    ############# M-step #############
+    
+    ### YOUR CODE STARTS ###
+    
+    # Recompute priors (mixture weights)
+    
+    # Recompute probability of heads for each coin
+    
+    ### YOUR CODE ENDS ###
+    
+  }
+  
+  return(list(ll_hid = ll_hid, ll_obs = ll_obs, lambda = lambda, theta = theta, gamma = gamma))
+  
+}
+```
+
+Run the EM algorithm:
+
+```{r}
+res <- coin_EM(D, k, lambda, theta)
+```
+
+
+## (d) Results
+
+Probability of heads:
+
+```{r}
+## YOUR CODE ##
+```
+
+Mixture weights:
+
+```{r}
+## YOUR CODE ##
+```
+
+Heatmap of responsibilities:
+
+```{r}
+## YOUR CODE ##
+```
+
+How many observations belong to each coin?
+
+```{r}
+## YOUR CODE ##
+```
