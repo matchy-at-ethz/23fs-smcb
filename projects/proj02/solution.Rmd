@@ -141,7 +141,7 @@ Next, we will need to initialize the mixture weights and the probabilities of ob
 # Number of coins
 k <- 2
 # Mixture weights (a vector of length k)
-lambda <- c(0.5, 0.5) ## YOUR CODE ##
+lambda <- c(0.7, 0.3) ## YOUR CODE ##
 # Probabilities of obtaining heads (a vector of length k)
 theta <- runif(k) ## YOUR CODE ##
 ```
@@ -229,25 +229,6 @@ coin_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
 }
 ```
 
-
-```{r}
-runif(2)
-```
-
-```{r}
-compute_resposibilities <- function(obs, lambda, theta) {
-    L <- length(obs)
-    n1 <- sum(obs)
-    n2 <- L - n1
-    gamma1 <- lambda[1] * theta[1]^n1 * (1 - theta[1])^n2
-    gamma2 <- lambda[2] * theta[2]^n1 * (1 - theta[2])^n2
-    return(c(gamma1, gamma2))
-}
-
-
-```
-
-
 Run the EM algorithm:
 
 ```{r}
@@ -261,22 +242,33 @@ Probability of heads:
 
 ```{r}
 ## YOUR CODE ##
+res$theta
 ```
 
 Mixture weights:
 
 ```{r}
 ## YOUR CODE ##
+res$lambda
 ```
 
 Heatmap of responsibilities:
 
 ```{r}
 ## YOUR CODE ##
+coul <- heat.colors(2, 1)
+heatmap(t(res$gamma), Colv=NA, Rowv=NA, scale="column", col=coul)
 ```
 
 How many observations belong to each coin?
 
 ```{r}
 ## YOUR CODE ##
+coin_1 <- sum(res$gamma[1, ] > res$gamma[2, ])
+coin_1
+```
+
+```{r}
+coin_2 <- sum(res$gamma[2, ] > res$gamma[1, ])
+coin_2
 ```
