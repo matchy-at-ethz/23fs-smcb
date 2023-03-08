@@ -150,9 +150,9 @@ obtaining heads. You can choose your own values as long as they make sense.
 # Number of coins
 k <- 2
 # Mixture weights (a vector of length k)
-lambda <- c(0.7, 0.3) ## YOUR CODE ##
+lambda <- rep(0.5, k) ## YOUR CODE ##
 # Probabilities of obtaining heads (a vector of length k)
-theta <- runif(k) ## YOUR CODE ##
+theta <- c(0.7, 0.3) ## YOUR CODE ##
 ```
 
 ## (c) The EM algorithm
@@ -223,9 +223,9 @@ coin_EM <- function(D, k, lambda, theta, tolerance = 1e-2) {
     # Recompute probability of heads for each coin
     heads <- rowSums(D)
     count_heads <- gamma %*% heads
-    count_tails <- (1 - gamma) %*% (L - heads)
+    count_tot <- rowSums(gamma) * L
     
-    theta <- t(count_heads / (count_heads + count_tails))
+    theta <- t(count_heads / count_tot)
     ### YOUR CODE ENDS ###
     
   }
