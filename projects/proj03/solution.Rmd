@@ -69,5 +69,100 @@ $$
 \end{aligned}\right.
 $$
 
+Alternatively we can solve by solving eigens (which is porbably the more proper way to do it because solving the equations above by hand for high dimensional transition matrices is not a very smart idea). Since $\pi^t = \pi^tT$, we can re-write it into $\pi = T^t \pi$, which means $\pi$ is just the corresponding eigenvector of eigenvalue $\lambda = 1$.
+
+Note that the eigenvector should be normalized to satisfy the constraint that $\pi_1 + \pi_2 = 1$.
+
+```{r}
+# initialize the transition matrix
+T <- matrix(c(0.2, 0.8, 0.6, 0.4), 2, 2, byrow=TRUE)
+
+# solve for the eigenvalues and eigenvectors for transpose of T
+eigens <- eigen(t(T))
+
+# get the index of lambda = 1
+index <- which(eigens$values == 1)[1]
+ev <- eigens$vectors[, index]
+
+# normalize so that the probs sum to 1
+pi <- ev / sum(ev)
+pi
+```
+
+```{r}
+# check that the two computation confirms
+abs(pi[1] - 3/7) < 1e-5
+abs(pi[2] - 4/7) < 1e-5
+```
+
 # Problem 7: Predictinig protein secondary structure using HMMs
 
+## (a)
+
+Read `proteins train.tsv`, `proteins test.tsv` and `proteins new.tsv` into the memory and store each in a `data.frame`
+
+```{r}
+train <- read.csv("data/proteins_train.tsv", sep="\t", header=F)
+test  <- read.csv("data/proteins_test.tsv",  sep="\t", header=F)
+new   <- read.csv("data/proteins_new.tsv",   sep="\t", header=F)
+```
+
+```{r}
+head(train)
+```
+
+## (b)
+
+Estimate the vector of initial state probabilities $I$, the matrix of transition probabilities $T$ and the matrix for emission probabilities $E$ by maximum likelihood
+
+## (c)
+
+Estimate the stationary distribution $\pi$ of the Markov chain by solving the eigenvalue problem
+(0.5 points) and by using a brute-force approach (0.5 points).
+
+## (d)
+
+Having estimated the parameters, i.e., the emission and transition matrices E, T and the
+vector of initial state probabilities I, you can predict the latent state sequence Z of a protein’s
+amino acid sequence X using the Viterbi algorithm. Use the Viterbi algorithm provided in
+viterbi.r (carefully read the parameter description!) and iterate over each data.frame of
+proteins test.tsv and proteins new.tsv row by row and use the amino acid sequence
+to predict its secondary structure, which you add to the data.frame as a new column. Save
+the extended data.frame of proteins new.tsv including the predicted secondary structure
+as a tsv file and hand it in together with your pdf.
+
+## (e)
+
+Estimate confidence intervals for each parameter in I, E and T with bootstrapping. In a
+single bootstrap run i estimate the probabilities for Ii
+, Ei and Ti the same as before, but not
+on the original data set proteins train.tsv, but on the resampled data set. I.e., sample
+with replacement as many rows from proteins train.tsv as the original data set has. Run
+a thousand bootstraps and compute the empirical 95% confidence intervals for each single
+parameter in {Ii}i
+, {Ei}i
+and {Ti}i
+.
+
+## (f)
+
+Use the following measure to compute the accuracy of the predicted secondary structure
+P = (pi) for the data.frame of proteins test.tsv given the real secondary structure
+S = (si):
+
+$$
+a(P, S) = 
+\frac{1}{L} \sum_{i} \left\{\begin{aligned}
+&1 & \text{if } p_i = s_i\\
+&0 & \text{if } p_i \neq s_i
+\end{aligned}\right.
+$$
+
+with sequence length L. Compute the accuracy for every protein in your data.frame and
+store the accuracies in a vector. What is the accuracy of the Viterbi algorithm over all
+sequences (i.e. call summary on the vector of accuracies).
+
+## (g)
+
+ Instead of using the Viterbi algorithm, now randomly guess secondary structures for all sequences. Compare the global accuracies of the Viterbi and the random approach and plot all
+accuracy distributions using boxplots.
