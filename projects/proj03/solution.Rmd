@@ -1,0 +1,73 @@
+---
+title: "Project 2 EM Algorithm"
+date: "March 24, 2023"
+author: Team K
+output: pdf_document
+---
+
+```{r, include=FALSE}
+source("code/viterbi.r", local = knitr::knit_global())
+# or sys.source("your-script.R", envir = knitr::knit_global())
+```
+
+# Problem 6: Hidden Markov Models
+
+According to slides 18, the HMM is parameterized by:
+
+$$
+\begin{aligned}
+&\text{Initial state probabilities: }& I_k = P(Z_1 = k) \\
+&\text{Transition probabilities: } & T_{kl} = P(Z_n=l|Z_{n-1}=k) \\
+&\text{Emission probabilities: } & E_{kx} = P(X_n = x | Z_n = k)
+\end{aligned}
+$$
+
+## (a)
+
+$I_k$ should sum up to $1$ $\longrightarrow$ degree of freedom = $K-1$
+
+In the $K \times K$ matrix $T$, each row needs to sum up to $1$ $\longrightarrow$ degree of freedom = $K-1$ for each row
+
+Similarly, in the $K \times M$ matrix $X$, each row needs to sum up to $1$ $\longrightarrow$ degree of freedom = $M-1$ for each row
+
+Hence, the maximum number of free parameters is $(K-1) + K \times (K-1) + K \times (M-1)$
+
+## (b)
+
+Computing the stationary distribution is equivalent to solving $\pi^t = \pi^t T$.
+
+Let $\pi^t = \begin{bmatrix}\pi_1 & \pi_2\end{bmatrix})$, we need to solve:
+
+$$
+\begin{aligned}
+\begin{bmatrix}\pi_1 & \pi_2\end{bmatrix} 
+&= \begin{bmatrix}
+  \pi_1& \pi_2
+\end{bmatrix}\begin{bmatrix}
+  0.2 & 0.8 \\
+  0.6 & 0.4
+\end{bmatrix} \\
+&= \begin{bmatrix}
+  0.2\pi_1 + 0.6 \pi_2 &
+  0.8\pi_1 + 0.4 \pi_2
+\end{bmatrix}
+\end{aligned}
+$$
+
+Given that $\pi_1 = 1 - \pi_2$e can solve the equations:
+
+$$
+\left\{\begin{aligned}
+  &\pi_1 = 0.2\pi_1 + 0.6\pi_2\\
+  &\pi_2 = 0.8\pi_1 + 0.4\pi_2\\
+  &\pi_1 = 1 - \pi_2
+\end{aligned}\right.
+\Rightarrow
+\left\{\begin{aligned}
+  &\pi_1 = \frac{3}{7}\\
+  &\pi_2 = \frac{4}{7}
+\end{aligned}\right.
+$$
+
+# Problem 7: Predictinig protein secondary structure using HMMs
+
