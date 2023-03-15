@@ -87,13 +87,13 @@ $\pi_1 + \pi_2 = 1$.
 
 ```{r}
 # initialize the transition matrix
-T <- matrix(c(0.2, 0.8, 0.6, 0.4), 2, 2, byrow=TRUE)
+Tr <- matrix(c(0.2, 0.8, 0.6, 0.4), 2, 2, byrow=TRUE)
 
 # solve for the eigenvalues and eigenvectors for transpose of T
-eigens <- eigen(t(T))
+eigens <- eigen(t(Tr))
 
 # get the index of lambda = 1
-index <- which(eigens$values == 1)[1]
+index <- which(eigens$values %>% near(1.0))[1]
 ev <- eigens$vectors[, index]
 
 # normalize so that the probs sum to 1
@@ -191,7 +191,7 @@ MLE <- function(data, aa_states, ss_states) {
       ss <- struct %>% substr(j, j)
 
       E[ss, aa] <- E[ss, aa] + 1.0
-      
+
       if (j < nchar(seq)) {
         ss_next <- struct %>% substr(j+1, j+1)
 
@@ -204,7 +204,7 @@ MLE <- function(data, aa_states, ss_states) {
   I <- I / sum(I)
   E <- E / rowSums(E)
   Tr <- Tr / rowSums(Tr)
-  
+
   return(list(I=I, E=E, Tr=Tr))
 }
 ```
@@ -227,10 +227,21 @@ res$Tr
 
 ## (c)
 
-Estimate the stationary distribution $\pi$ of the Markov chain by solving the
-eigenvalue problem and by using a brute-force approach.
+> Estimate the stationary distribution $\pi$ of the Markov chain by solving the
+> eigenvalue problem and by using a brute-force approach.
 
 ### Eigenvalue method
+
+```{r}
+eigens <- eigen(t(res$Tr))
+
+index <- which(eigens$values %>% near(1.0))[1]
+
+ev <- eigens$vectors[, index]
+
+pi <- ev / sum(ev)
+pi
+```
 
 ### Brute-force
 
