@@ -179,6 +179,7 @@ MLE <- function(data, aa_states, ss_states) {
   N <- nrow(data) # num of data points
 
   # iterate over each row of the data
+  # TODO: maybe rewrite the for loops
   for (i in 1:N) {
     seq <- data$sequence[i]
     struct <- data$structure[i]
@@ -239,39 +240,84 @@ index <- which(eigens$values %>% near(1.0))[1]
 
 ev <- eigens$vectors[, index]
 
-pi <- ev / sum(ev)
-pi
+pi_eigen <- ev / sum(ev)
+pi_eigen
 ```
 
 ### Brute-force
 
+```{r}
+# compute Tr %*% Tr until there's no huge difference between the two
+# matrices
+Tr <- res$Tr
+pi_brute <- rep(0.0, length(ss_states))
+pi_brute[1] <- 1.0
+
+while (TRUE) {
+  Tr <- Tr %*% res$Tr
+  pi_new <- Tr[1, ]
+
+  if (max(abs(pi_new - pi_brute)) < 1e-5) {
+    break
+  }
+
+  pi_brute <- pi_new
+}
+```
+
+```{r}
+pi_brute %>% near(pi_eigen)
+```
+
 ## (d)
 
-Having estimated the parameters, i.e., the emission and transition matrices $E$,
-$T$ and the vector of initial state probabilities $I$, you can predict the
-latent state sequence $Z$ of a protein’s amino acid sequence $X$ using the
-Viterbi algorithm. Use the Viterbi algorithm provided in `viterbi.r` (carefully
-read the parameter description!) and iterate over each `data.frame` of
-`proteinstest.tsv` and `proteins new.tsv` row by row and use the amino acid
-sequence to predict its secondary structure, which you add to the `data.frame`
-as a new column. Save the extended `data.frame` of `proteins new.tsv` including the
-predicted secondary structure as a tsv file and hand it in together with your
-pdf.
+> Having estimated the parameters, i.e., the emission and transition matrices $E$,
+> $T$ and the vector of initial state probabilities $I$, you can predict the
+> latent state sequence $Z$ of a protein’s amino acid sequence $X$ using the
+> Viterbi algorithm. Use the Viterbi algorithm provided in `viterbi.r` (carefully
+> read the parameter description!) and iterate over each `data.frame` of
+> `proteins_test.tsv` and `proteins_new.tsv` row by row and use the amino acid
+> sequence to predict its secondary structure, which you add to the `data.frame`
+> as a new column. Save the extended `data.frame` of `proteins_new.tsv` including the
+> predicted secondary structure as a tsv file and hand it in together with your
+> pdf.
+
+```{r}
+predict_test <- test[,2]
+colnames(predict_test) <- c("AminoAcids")
+predict_test <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_test)
+```
+
+```{r}
+predict_new <- new[,2]
+colnames(predict_new) <- c("AminoAcids")
+predict_new <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_new)
+```
+
+```{r}
+# save predict new to a tsv file
+write.table(predict_new, file="proteins_struct_new.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+```
 
 ## (e)
 
-Estimate confidence intervals for each parameter in $I$, $E$ and $T$ with
-bootstrapping. In a single bootstrap run $i$ estimate the probabilities for
-$I_i$, $E_i$ and $T_i$ the same as before, but not on the original data set
-`proteins train.tsv`, but on the resampled data set. i.e., sample with
-replacement as many rows from `proteins train.tsv` as the original data set has.
-Run a thousand bootstraps and compute the empirical $95\%$ confidence intervals
-for each single parameter in $\{I_i\}_i$, $\{E_i\}_i$ and $\{T_i\}_i$.
+> Estimate confidence intervals for each parameter in $I$, $E$ and $T$ with
+> bootstrapping. In a single bootstrap run $i$ estimate the probabilities for
+> $I_i$, $E_i$ and $T_i$ the same as before, but not on the original data set
+> `proteins train.tsv`, but on the resampled data set. i.e., sample with
+> replacement as many rows from `proteins train.tsv` as the original data set has.
+> Run a thousand bootstraps and compute the empirical $95\%$ confidence intervals
+> for each single parameter in $\{I_i\}_i$, $\{E_i\}_i$ and $\{T_i\}_i$.
+
+```{r}
+# bootstrap
+
+```
 
 ## (f)
 
 Use the following measure to compute the accuracy of the predicted secondary
-structure $P = (p_i)$ for the `data.frame` of `proteins test.tsv` given the real
+structure $P = (p_i)$ for the `data.frame` of `proteins_test.tsv` given the real
 secondary structure $S = (s_i)$:
 
 $$
