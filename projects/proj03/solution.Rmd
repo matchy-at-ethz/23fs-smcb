@@ -10,6 +10,10 @@ source("code/viterbi.r", local = knitr::knit_global())
 # or sys.source("your-script.R", envir = knitr::knit_global())
 ```
 
+```{r, include=FALSE}
+library(tidyverse)
+```
+
 # Problem 6: Hidden Markov Models
 
 According to slides 18, the HMM is parameterized by:
@@ -107,13 +111,13 @@ abs(pi[2] - 4/7) < 1e-5
 
 ## (a)
 
-Read `proteins train.tsv`, `proteins test.tsv` and `proteins new.tsv` into the
-memory and store each in a `data.frame`
+> Read `proteins train.tsv`, `proteins test.tsv` and `proteins new.tsv` into the
+> memory and store each in a `data.frame`
 
 ```{r}
-train <- read.csv("data/proteins_train.tsv", sep="\t", header=F)
-test  <- read.csv("data/proteins_test.tsv",  sep="\t", header=F)
-new   <- read.csv("data/proteins_new.tsv",   sep="\t", header=F)
+train <- read.csv("data/proteins_train.tsv", sep = "\t", header = FALSE)
+test  <- read.csv("data/proteins_test.tsv",  sep = "\t", header = FALSE)
+new   <- read.csv("data/proteins_new.tsv",   sep = "\t", header = FALSE)
 ```
 
 ```{r}
@@ -125,59 +129,101 @@ colnames(test)  <- header
 colnames(new)   <- header[1:2]
 ```
 
+```{r}
+head(train)
+```
+
 ## (b)
 
-Estimate the vector of initial state probabilities $I$, the matrix of transition
-probabilities $T$ and the matrix for emission probabilities $E$ by maximum
-likelihood.
+> Estimate the vector of initial state probabilities $I$, the matrix of transition
+> probabilities $T$ and the matrix for emission probabilities $E$ by maximum
+> likelihood.
+
+First get all the possible amino acid and secondary structure states.
 
 ```{r}
-forward_prob <- function() {
-  # placeholder
-}
+# get all the possible amino acid states
+aa_states <- train$sequence %>%
+  strsplit("") %>%
+  unlist() %>%
+  unique() %>%
+  sort()
+aa_states
 ```
 
 ```{r}
-backward_prob <0- function() {
-  # placeholder
-}
+# get all the possible secondary structure states, and sort them
+ss_states <- train$structure %>%
+  strsplit("") %>%
+  unlist() %>%
+  unique() %>%
+  sort()
+ss_states
 ```
 
 ```{r}
-baum_welch <- function(Tr, E,
-                       state_label, symbol_label, threshold=1e-5, max_iter=1000) {
+MLE <- function(data, aa_states, ss_states) {
+  k <- length(ss_states) # num of latent state
+  m <- length(aa_states) # num of observed state
 
-  # get the number of states and symbols
-  K <- length(state_label)
-  M <- length(symbol_label)
+  # initialize the parameters
+  I <- rep(0.0, k)
+  names(I) <- ss_states
 
-  # set Tr and E to all zeros
-  Tr <- matrix(0, K, K)
-  E  <- matrix(0, K, M)
+  E <- matrix(0.0, nrow=k, ncol=m)
+  dimnames(E) <- list(ss_states, aa_states)
 
-  ll_hid <- -Inf
-  ll_obs <- -Inf
-  diff <- Inf
-  iter <- 0
-  while (diff >= threshold && iter < max_iter) {
+  Tr <- matrix(0.0, nrow=k, ncol=k)
+  dimnames(Tr) <- list(ss_states, ss_states)
 
-    ll_obs_old <- ll_obs
-    # E-step
-    # compute the forward and backward probabilities
+  N <- nrow(data) # num of data points
 
+  # iterate over each row of the data
+  for (i in 1:N) {
+    seq <- data$sequence[i]
+    struct <- data$structure[i]
 
-    # M-step
-    # compute the new transition and emission matrices
+    ss_1st <- struct %>% substr(1, 1)
+    I[ss_1st] <- I[ss_1st] + 1.0
 
-    # update the log-likelihood
-    log_likelihood <- log_likelihood_new
+    for (j in 1:nchar(seq)) {
+      aa <- seq %>% substr(j, j)
+      ss <- struct %>% substr(j, j)
 
-    # update the iteration
-    iter <- iter + 1
+      E[ss, aa] <- E[ss, aa] + 1.0
+      
+      if (j < nchar(seq)) {
+        ss_next <- struct %>% substr(j+1, j+1)
+
+        Tr[ss, ss_next] <- Tr[ss, ss_next] + 1.0
+      }
+    }
   }
-}
-``
 
+  # convert thee counts to log probs
+  I <- I / sum(I)
+  E <- E / rowSums(E)
+  Tr <- Tr / rowSums(Tr)
+  
+  return(list(I=I, E=E, Tr=Tr))
+}
+```
+
+```{r}
+res <- MLE(train, aa_states, ss_states)
+```
+
+```{r}
+res$I
+```
+
+```{r}
+res$E
+```
+
+```{r}
+res$Tr
+```
 
 ## (c)
 
