@@ -12,6 +12,13 @@ source("code/viterbi.r", local = knitr::knit_global())
 
 ```{r, include=FALSE}
 library(tidyverse)
+library(foreach)
+library(doParallel)
+library(unix)
+```
+
+```{r, include=FALSE}
+rlimit_as(1e12, 1e12)
 ```
 
 # Problem 6: Hidden Markov Models
@@ -103,8 +110,8 @@ pi
 
 ```{r}
 # check that the two computation confirms
-abs(pi[1] - 3/7) < 1e-5
-abs(pi[2] - 4/7) < 1e-5
+near(pi[1], 3/7)
+near(pi[2], 4/7)
 ```
 
 # Problem 7: Predictinig protein secondary structure using HMMs
@@ -180,7 +187,7 @@ MLE <- function(data, aa_states, ss_states) {
 
   # iterate over each row of the data
   # TODO: maybe rewrite the for loops
-  for (i in 1:N) {
+  foreach (i=1:N) %do% {
     seq <- data$sequence[i]
     struct <- data$structure[i]
 
@@ -257,16 +264,17 @@ while (TRUE) {
   Tr <- Tr %*% res$Tr
   pi_new <- Tr[1, ]
 
-  if (max(abs(pi_new - pi_brute)) < 1e-5) {
+  if (all(near(pi_new, pi_brute))) {
     break
   }
 
   pi_brute <- pi_new
 }
+pi_brute
 ```
 
 ```{r}
-pi_brute %>% near(pi_eigen)
+near(pi_eigen, pi_brute, tol=1e-5)
 ```
 
 ## (d)
@@ -283,20 +291,20 @@ pi_brute %>% near(pi_eigen)
 > pdf.
 
 ```{r}
-predict_test <- test[,2]
+predict_test <- data.frame(test[,2])
 colnames(predict_test) <- c("AminoAcids")
 predict_test <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_test)
 ```
 
 ```{r}
-predict_new <- new[,2]
+predict_new <- data.frame(new[,2])
 colnames(predict_new) <- c("AminoAcids")
 predict_new <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_new)
 ```
 
 ```{r}
 # save predict new to a tsv file
-write.table(predict_new, file="proteins_struct_new.tsv", sep="\t", quote=FALSE, row.names=FALSE)
+write.table(predict_new, file="proteins_new.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 ```
 
 ## (e)
@@ -310,15 +318,79 @@ write.table(predict_new, file="proteins_struct_new.tsv", sep="\t", quote=FALSE, 
 > for each single parameter in $\{I_i\}_i$, $\{E_i\}_i$ and $\{T_i\}_i$.
 
 ```{r}
-# bootstrap
+num_cores <- detectCores()
+registerDoParallel(num_cores)
 
+# 1000 rounds of bootstrap
+start_time <- Sys.time()
+df <- foreach(i=1:1000, .combine=rbind) %dopar% {
+  # allow duplicates
+  picked <- sample(seq_len(nrow(train)), size=nrow(train), replace = TRUE)
+  bootstrap <- train[picked, ]
+  params <- MLE(bootstrap, aa_states = aa_states, ss_states = ss_states)
+  return(params)
+}
+end_time <- Sys.time()
+end_time - start_time
+stopImplicitCluster()
+```
+
+```{r}
+compute_ci <- function(list_of_matrix) {
+  # iterate over each matrix
+  mat <- as.data.frame(list_of_matrix[[1]])
+  dims <- dim(mat)
+  df <- data.frame(matrix(0, nrow=length(list_of_matrix), ncol=prod(dims)))
+  colnames(df) <- sapply(1:dims[2], function(i) {
+    sapply(1:dims[1], function(j) {
+      paste0(rownames(mat)[j], colnames(mat)[i])
+    })
+  }) %>% unlist()
+  
+  foreach (i=1:length(list_of_matrix)) %do% {
+    v <- as.vector(list_of_matrix[[i]])
+    foreach (j=1:length(v)) %do% {
+      df[i, j] <- v[j]
+    }
+  }
+
+  df <- apply(df, 2, quantile, probs=c(.025, .975), na.rm=TRUE)
+  return(df)
+}
+```
+
+```{r}
+I_emp <- as.data.frame(df[, "I"])
+```
+
+```{r}
+CI_I <- apply(I_emp, 1, quantile, probs=c(.025, .975))
+CI_I
+```
+
+```{r}
+CI_E <- compute_ci(df[, "E"])
+CI_E
+```
+
+```{r}
+CI_Tr <- compute_ci(df[, "Tr"])
+CI_Tr
+```
+
+
+```{r, fig.height=16, fig.width=44, eval=FALSE}
+# options(repr.plot.width = 20, repr.plot.height =30)
+ggplot(gather(data), aes(value)) +
+  geom_histogram(binwidth = 1e-3, color = "black", fill = "black") +
+  facet_wrap(~key, nrow = 8, scales = 'free')
 ```
 
 ## (f)
 
-Use the following measure to compute the accuracy of the predicted secondary
-structure $P = (p_i)$ for the `data.frame` of `proteins_test.tsv` given the real
-secondary structure $S = (s_i)$:
+> Use the following measure to compute the accuracy of the predicted secondary
+> structure $P = (p_i)$ for the `data.frame` of `proteins_test.tsv` given the real
+> secondary structure $S = (s_i)$:
 
 $$
 a(P, S) =
@@ -328,13 +400,45 @@ a(P, S) =
 \end{aligned}\right.
 $$
 
-with sequence length $L$. Compute the accuracy for every protein in your
-`data.frame` and store the accuracies in a vector. What is the accuracy of the
-Viterbi algorithm over all sequences (i.e. call `summary` on the vector of
-accuracies)?
+> with sequence length $L$. Compute the accuracy for every protein in your
+> `data.frame` and store the accuracies in a vector. What is the accuracy of the
+> Viterbi algorithm over all sequences (i.e. call `summary` on the vector of
+> accuracies)?
+
+```{r}
+accuracy_viterbi <- foreach (i=1:nrow(test), .combine = c) %dopar% {
+  predicted <- predict_test$PredictedStructure[i] %>%
+    strsplit("") %>% 
+    unlist()
+  truth <- test$structure[i] %>% 
+    strsplit("") %>% 
+    unlist()
+  acc <- sum(truth == predicted) / length(predicted)
+  return(acc)
+}
+summary(accuracy_viterbi)
+```
 
 ## (g)
 
-Instead of using the Viterbi algorithm, now randomly guess secondary structures
-for all sequences. Compare the global accuracies of the Viterbi and the random
-approach and plot all accuracy distributions using boxplots.
+> Instead of using the Viterbi algorithm, now randomly guess secondary structures
+> for all sequences. Compare the global accuracies of the Viterbi and the random
+> approach and plot all accuracy distributions using boxplots.
+
+```{r}
+set.seed(2023)
+accuracy_random <- foreach (i=1:nrow(test), .combine = c) %dopar% {
+  truth <- test$structure[i] %>% 
+    strsplit("") %>% 
+    unlist()
+  predicted <- sample(ss_states, size=length(truth), replace = TRUE)
+  acc <- sum(truth == predicted) / length(truth)
+  return(acc)
+}
+summary(accuracy_random)
+```
+
+```{r}
+boxplot(accuracy_random, accuracy_viterbi,
+        ylab = 'Accuracy', names = c('random', 'viterbi'))
+```
