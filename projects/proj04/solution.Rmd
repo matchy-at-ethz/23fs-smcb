@@ -1,0 +1,267 @@
+---
+title: "Project 4 Membereship detection with profile HMMs"
+date: "March 23, 2023"
+author: Team K - Minghang Li
+output:
+  pdf_document:
+    latex_engine: xelatex
+    pandoc_args: "--pdf-engine-opt=-shell-escape"
+    extra_dependencies: ["graphviz", "multirow", "float", "kpfonts"]
+---
+
+```{r, include=FALSE}
+library(foreach)
+library(doParallel)
+```
+
+# Problem 8: Estimating match emission probabilities
+
+The count $E_i(a)$ and insert emission probability $e_i(a)$, $\mathcal{a} \in \mathcal{A} = \{A, C, G, T\}$ are:
+
+```{=latex}
+\setlength{\tabcolsep}{10pt} % Default value: 6pt
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[ht]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{pos}                & \textbf{$E_i(a)$}             & \textbf{$e_i(a)$}                                 \\ \hline
+\multirow{4}{*}{\textbf{1}} & $E_1(A) = 4 + 1 = \mathbf{5}$ & $e_1(A) = \frac{4+1}{4+4} = \mathbf{\frac{5}{8}}$ \\ \cline{2-3}
+                            & $E_1(C) = 0 + 1 = \mathbf{1}$ & $e_1(C) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \cline{2-3}
+                            & $E_1(G) = 0 + 1 = \mathbf{1}$ & $e_1(G) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \cline{2-3}
+                            & $E_1(T) = 0 + 1 = \mathbf{1}$ & $e_1(T) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \hline
+\multirow{4}{*}{\textbf{2}} & $E_2(A) = 0 + 1 = \mathbf{1}$ & $e_2(A) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \cline{2-3}
+                            & $E_2(C) = 0 + 1 = \mathbf{1}$ & $e_2(C) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \cline{2-3}
+                            & $E_2(G) = 4 + 1 = \mathbf{5}$ & $e_2(G) = \frac{4+1}{4+4} = \mathbf{\frac{5}{8}}$ \\ \cline{2-3}
+                            & $E_2(T) = 0 + 1 = \mathbf{1}$ & $e_2(T) = \frac{0+1}{4+4} = \mathbf{\frac{1}{8}}$ \\ \hline
+\multirow{4}{*}{\textbf{3}} & $E_3(A) = 0 + 1 = \mathbf{1}$ & $e_3(A) = \frac{0+1}{5+4} = \mathbf{\frac{1}{9}}$ \\ \cline{2-3}
+                            & $E_3(C) = 5 + 1 = \mathbf{6}$ & $e_3(C) = \frac{5+1}{5+4} = \mathbf{\frac{2}{3}}$ \\ \cline{2-3}
+                            & $E_3(G) = 0 + 1 = \mathbf{1}$ & $e_3(G) = \frac{0+1}{5+4} = \mathbf{\frac{1}{9}}$ \\ \cline{2-3}
+                            & $E_3(T) = 0 + 1 = \mathbf{1}$ & $e_3(T) = \frac{0+1}{5+4} = \mathbf{\frac{1}{9}}$ \\ \hline
+\end{tabular}
+\end{table}
+```
+
+# Problem 9: Estimating insert emission probabilities
+
+Since the contiguous insert states have the same position in the model, the count $E_i(a)$ and insert emission probability $e_i(a)$, $\mathcal{a} \in \mathcal{A} = \{A, C, G, T\}$ are:
+
+```{=latex}
+\setlength{\tabcolsep}{10pt} % Default value: 6pt
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[ht]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{$E(a)$}             & \textbf{$e(a)$}                                 \\ \hline
+$E(A) = 5 + 1 = \mathbf{6}$ & $e(A) = \frac{5+1}{5+1+4} = \mathbf{\frac{3}{5}}$ \\ \hline
+$E(C) = 0 + 1 = \mathbf{1}$ & $e(C) = \frac{0+1}{5+1+4} = \mathbf{\frac{1}{10}}$ \\ \hline
+$E(G) = 1 + 1 = \mathbf{2}$ & $e(G) = \frac{1+1}{5+1+4} = \mathbf{\frac{1}{5}}$ \\ \hline
+$E(T) = 0 + 1 = \mathbf{1}$ & $e(T) = \frac{0+1}{5+1+4} = \mathbf{\frac{1}{10}}$ \\ \hline
+\end{tabular}
+\end{table}
+\pagebreak
+```
+
+# Problem 10: Estimating transition probabilities
+
+The path of each sequence (\textcolor[HTML]{1f77b4}{bat}, \textcolor[HTML]{ff7f0e}{rat}, \textcolor[HTML]{2ca02c}{cat}, \textcolor[HTML]{d62728}{gnat}, \textcolor[HTML]{9467bd}{goat}) from Begin to end is summarized below,
+
+![HMM.pdf](./HMM.pdf)
+
+Nodes that are not visited in any path have uniform probability of transitting to its next states:
+
+| Node | $t_i(k \rightarrow l)$ |
+| --- | --- |
+| $I_0$ | $\frac{1}{3}$ |
+| $I_1$ | $\frac{1}{3}$ |
+| $I_3$ | $\frac{1}{2}$ |
+| $D_3$ | $\frac{1}{2}$ |
+
+And the transition probabilities of nodes that are visited are listed in the following table
+
+```{=latex}
+\pagebreak
+\setlength{\tabcolsep}{10pt} % Default value: 6pt
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[ht]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{pos}                & \textbf{$T_i(a)$}             & \textbf{$e_i(a)$}                                 \\ \hline
+\multirow{3}{*}{\textbf{0}} & $T_0(M \rightarrow M) = 4 + 1 = \mathbf{5}$ & $t_0(M \rightarrow M) = \frac{4+1}{5+1+2} = \mathbf{\frac{5}{8}}$ \\ \cline{2-3}
+                            & $T_0(M \rightarrow I) = 0 + 1 = \mathbf{1}$ & $t_0(M \rightarrow I) = \frac{0+1}{5+1+2} = \mathbf{\frac{1}{8}}$ \\ \cline{2-3}
+                            & $T_0(M \rightarrow D) = 1 + 1 = \mathbf{2}$ & $t_0(M \rightarrow D) = \frac{0+1}{5+1+2} = \mathbf{\frac{1}{8}}$ \\ \hline
+\multirow{6}{*}{\textbf{1}} & $T_1(M \rightarrow M) = 3 + 1 = \mathbf{4}$ & $t_1(M \rightarrow M) = \frac{3+1}{4+1+2} = \mathbf{\frac{4}{7}}$ \\ \cline{2-3}
+                            & $T_1(M \rightarrow I) = 0 + 1 = \mathbf{1}$ & $t_1(M \rightarrow I) = \frac{0+1}{4+1+2} = \mathbf{\frac{1}{7}}$ \\ \cline{2-3}
+                            & $T_1(M \rightarrow D) = 1 + 1 = \mathbf{2}$ & $t_1(M \rightarrow D) = \frac{0+1}{4+1+2} = \mathbf{\frac{1}{7}}$ \\ \cline{2-3}
+                            & $T_1(D \rightarrow M) = 1 + 1 = \mathbf{2}$ & $t_1(D \rightarrow M) = \frac{1+1}{2+1+1} = \mathbf{\frac{2}{4}}$ \\ \cline{2-3}
+                            & $T_1(D \rightarrow I) = 0 + 1 = \mathbf{1}$ & $t_1(D \rightarrow I) = \frac{0+1}{2+1+1} = \mathbf{\frac{1}{4}}$ \\ \cline{2-3}
+                            & $T_1(D \rightarrow D) = 0 + 1 = \mathbf{1}$ & $t_1(D \rightarrow D) = \frac{0+1}{2+1+1} = \mathbf{\frac{1}{4}}$ \\ \hline
+\multirow{9}{*}{\textbf{2}} & $T_2(M \rightarrow M) = 2 + 1 = \mathbf{3}$ & $t_2(M \rightarrow M) = \frac{2+1}{3+3+1} = \mathbf{\frac{3}{7}}$ \\ \cline{2-3}
+                            & $T_2(M \rightarrow I) = 2 + 1 = \mathbf{3}$ & $t_2(M \rightarrow I) = \frac{2+1}{3+3+1} = \mathbf{\frac{3}{7}}$ \\ \cline{2-3}
+                            & $T_2(M \rightarrow D) = 0 + 1 = \mathbf{1}$ & $t_2(M \rightarrow D) = \frac{0+1}{3+3+1} = \mathbf{\frac{1}{7}}$ \\ \cline{2-3}
+                            & $T_2(I \rightarrow M) = 3 + 1 = \mathbf{4}$ & $t_2(I \rightarrow M) = \frac{3+1}{4+4+1} = \mathbf{\frac{4}{9}}$ \\ \cline{2-3}
+                            & $T_2(I \rightarrow I) = 3 + 1 = \mathbf{4}$ & $t_2(I \rightarrow I) = \frac{3+1}{4+4+1} = \mathbf{\frac{4}{9}}$ \\ \cline{2-3}
+                            & $T_2(I \rightarrow D) = 0 + 1 = \mathbf{1}$ & $t_2(I \rightarrow D) = \frac{0+1}{4+4+1} = \mathbf{\frac{1}{9}}$ \\ \cline{2-3}
+                            & $T_2(D \rightarrow M) = 0 + 1 = \mathbf{1}$ & $t_2(D \rightarrow M) = \frac{0+1}{1+2+1} = \mathbf{\frac{1}{4}}$ \\ \cline{2-3}
+                            & $T_2(D \rightarrow I) = 1 + 1 = \mathbf{2}$ & $t_2(D \rightarrow I) = \frac{1+1}{1+2+1} = \mathbf{\frac{2}{4}}$ \\ \cline{2-3}
+                            & $T_2(D \rightarrow D) = 0 + 1 = \mathbf{1}$ & $t_2(D \rightarrow D) = \frac{0+1}{1+2+1} = \mathbf{\frac{1}{4}}$ \\ \hline
+\multirow{2}{*}{\textbf{3}} & $T_3(M \rightarrow M) = 5 + 1 = \mathbf{6}$ & $t_3(M \rightarrow M) = \frac{5+1}{6+1} = \mathbf{\frac{6}{7}}$ \\ \cline{2-3}
+                            & $T_3(M \rightarrow I) = 0 + 1 = \mathbf{1}$ & $t_3(M \rightarrow I) = \frac{0+1}{6+1} = \mathbf{\frac{1}{7}}$ \\ \hline
+\end{tabular}
+\end{table}
+```
+
+All the transition probabilities are summarized in Figure 2.
+
+![HMM profile](./HMM_profile.pdf)
+
+# Problem 11: Protein family membership classification
+
+## Import functions and read alignments
+
+```{r}
+# import functions
+source("code/profileHMM.R", local = knitr::knit_global())
+```
+
+```{r}
+# read alignments
+GTPase <- parseAlignment("./data/GTP_binding_proteins.txt")
+ATPase <- parseAlignment("./data/ATPases.txt")
+```
+
+## Learn HMM from two protein families
+
+```{r}
+HMM_GTPase <- learnHMM(GTPase)
+HMM_ATPase <- learnHMM(ATPase)
+```
+
+## Identify position(s) with the highest match and insert emission frequencies over all symbols.
+
+```{r}
+alphabet <- c("A","C","D","E","F","G","H","I","K","L","M", "N","P","Q","R","S","T","V","W","Y")
+```
+
+### ATPase
+
+```{r}
+mE_max_ATPase <- which(HMM_ATPase$mE == max(HMM_ATPase$mE, na.rm = TRUE), arr.ind = TRUE)
+iE_max_ATPase <- which(HMM_ATPase$iE == max(HMM_ATPase$iE, na.rm = TRUE), arr.ind = TRUE)
+print(paste("The position(s) with the highest match emission frequency over all symbols is/are:",
+            mE_max_ATPase[2]))
+print(paste("The position(s) with the highest insert emission frequency over all symbols is/are:",
+            iE_max_ATPase[2]))
+```
+
+```{r}
+# generate barplot color sequence c() with length of alphabet
+# all colors are gray except for position at mE_max_ATPase[1] is red
+color_mE_max_ATPase <- c(rep("gray", length(alphabet)))
+color_mE_max_ATPase[mE_max_ATPase[1]] <- "red"
+barplot(HMM_ATPase$mE[, mE_max_ATPase[2]],
+        col = color_mE_max_ATPase,
+        names.arg = alphabet,
+        main = "Match emission frequency distribution at highest mE position",
+        xlab = "Amino acids",
+        ylab = "Match emission frequency")
+```
+
+```{r}
+# generate barplot color sequence c() with length of alphabet
+# all colors are gray except for position at mE_max_ATPase[1] is red
+color_iE_max_ATPase <- c(rep("gray", length(alphabet)))
+color_iE_max_ATPase[iE_max_ATPase[1]] <- "red"
+barplot(HMM_ATPase$iE[, iE_max_ATPase[2]],
+        col = color_iE_max_ATPase,
+        names.arg = alphabet,
+        main = "Insertion emission frequency distribution at highest iE position",
+        xlab = "Amino acids",
+        ylab = "Insertion emission frequency")
+```
+### GTPase
+
+```{r}
+mE_max_GTPase <- which(HMM_GTPase$mE == max(HMM_GTPase$mE, na.rm = TRUE), arr.ind = TRUE)
+iE_max_GTPase <- which(HMM_GTPase$iE == max(HMM_GTPase$iE, na.rm = TRUE), arr.ind = TRUE)
+print(paste("The position(s) with the highest match emission frequency over all symbols is/are:",
+            mE_max_GTPase[2]))
+print(paste("The position(s) with the highest insert emission frequency over all symbols is/are:",
+            iE_max_GTPase[2]))
+```
+
+
+```{r}
+# generate barplot color sequence c() with length of alphabet
+# all colors are gray except for position at mE_max_ATPase[1] is red
+color_mE_max_GTPase <- c(rep("gray", length(alphabet)))
+color_mE_max_GTPase[mE_max_GTPase[1]] <- "red"
+barplot(HMM_GTPase$mE[, mE_max_GTPase[2]],
+        col = color_mE_max_GTPase,
+        names.arg = alphabet,
+        main = "Match emission frequency distribution at highest mE position",
+        xlab = "Amino acids",
+        ylab = "Match emission frequency")
+```
+
+```{r}
+# generate barplot color sequence c() with length of alphabet
+# all colors are gray except for position at mE_max_ATPase[1] is red
+color_iE_max_GTPase <- c(rep("gray", length(alphabet)))
+color_iE_max_GTPase[iE_max_GTPase[1]] <- "red"
+barplot(HMM_GTPase$iE[, iE_max_GTPase[2]],
+        col = color_iE_max_GTPase,
+        names.arg = alphabet,
+        main = "Insertion emission frequency distribution at highest iE position",
+        xlab = "Amino acids",
+        ylab = "Insertion emission frequency")
+```
+
+## Classify unclassified proteins
+
+```{r}
+unclassified_proteins <- parseProteins(proteinsFile = "./data/Unclassified_proteins.txt")
+```
+
+```{r}
+num_cores <- detectCores()
+registerDoParallel(num_cores)
+log_odds_ATPase <- foreach(seq=unclassified_proteins, .combine = c) %dopar% {
+  forward(HMM = HMM_ATPase, seq = seq)
+}
+log_odds_GTPase <- foreach(seq=unclassified_proteins, .combine = c) %dopar% {
+  forward(HMM = HMM_GTPase, seq = seq)
+}
+stopImplicitCluster()
+```
+
+```{r}
+# plot the log odds ratio of ATPase (red) and GTPase (blue) on the same plot
+plot(log_odds_GTPase, col="blue",
+     xlab = "Sequence index",
+     ylab = "Log odds vs random")
+points(log_odds_ATPase, col="red")
+# add legend
+legend("right", legend=c("ATPase", "GTPase"), col=c("red", "blue"), lty=1, cex=0.8)
+```
+
+```{r}
+q <- log_odds_ATPase - log_odds_GTPase
+plot(q, col=ifelse(q >= 0, "red", "blue"),
+     xlab = "Sequence index",
+     ylab = "Log odds ATPase vs GTPase")
+legend("right", legend=c("ATPase", "GTPase"), col=c("red", "blue"), lty=1, cex=0.8)
+```
+
+We can see a clear separation between points that are classified as ATPases and those classified as GTPases. The log ratio of ATPase vs GTPase is always way larger than 0 or way smaller than 0, indicating high likelihood.
+
+```{r}
+# print the index of proteins that are classified as ATPases
+print("The index of proteins that are classified as ATPases are:")
+print(which(q >= 0))
+# print the index of proteins that are classified as GTPases
+print("The index of proteins that are classified as GTPases are:")
+print(which(q < 0))
+```
