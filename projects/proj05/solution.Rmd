@@ -1,11 +1,185 @@
 ---
-title: "Title"
+title: "Project 5: Statistical phylogenetics"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: [ "kpfonts" ]
+    extra_dependencies: [ "amsthm" , "kpfonts", "cancel", "unicode-math" ]
 ---
 
+# Problem 12: Transition matrix, rate matrix, and stationary distribution
+
+## 1. Show that $\frac{dP(t)}{dt} = R \cdot P(t)$
+
+\begin{proof}
+
+$$
+\begin{aligned}
+  \frac{dP(t)}{dt} &= \frac{P(t + dt) - P(t)}{dt} & (\text{Definition of derivative})\\
+                   &= \frac{P(t)P(dt) - P(t)}{dt} & (\text{Chapman-Kolmogorov's equation}) \\
+                   &= \frac{P(t) (I + Rdt) - P(t)}{dt} (\text{Definition of }P(dt))\\
+                   &= \frac{\cancel{P(t)} + RP(t)dt - \cancel{P(t)}}{dt} \\
+                   &= \frac{RP(t)dt}{dt} \\
+                   &= RP(t)
+\end{aligned}
+$$
+\end{proof}
+
+## 2. Assume that the given Markov chain is ergodic with (unique) stationary distribution $\pi$, show that $R\pi = 0$
+
+\begin{proof}
+The stationary distribution $\pi$ satisfies:
+
+$$
+P(t)\pi = \pi
+$$
+after a sufficiently long time $t$ and any time point that follows. Hence, the following equation also holds:
+
+$$
+P(t + dt) \pi = \pi
+$$
+
+We can further re-write the left-hand side of the equation:
+
+$$
+\begin{aligned}
+P(t + dt) \pi &= P(t)P(dt)\pi & (\text{Chapman-Kologomorov's equation})\\
+                       &= P(t)(I + Rdt)\pi & (\text{Definition of }P(dt)) \\
+                       &= P(t)\pi + Rdt \cdot P(t)\pi \\
+                       &= \pi + Rdt \pi
+\end{aligned}
+$$
+
+which leads us to the following equality:
+
+$$
+\begin{aligned}
+\cancel{\pi} + Rdt\pi &= \cancel{\pi} \\
+Rdt\pi &= 0 \\
+R \pi &= 0
+\end{aligned}
+$$
+\end{proof}
+
+# Problem 13: Phylogenetic trees as Bayesian networks
+
+## 1. What is the joint probability $P(X, Z|T)$ of the tree?
+
+$$
+P(X, Z|T) =     \pi(Z_4)
+      P(X_5|Z_4)        P(Z_3|Z_4)
+             P(Z_2|Z_3)            P(Z_1|Z_3)
+        P(X_4|Z_2) P(X_3|Z_2) P(X_2|Z_1) P(X_1|Z_1)
+$$
+
+## 2. How many summation steps would be required for the naive calculation of $P(X|T)$ via brute-force marginalization over the hidden nodes $Z$?
+
+Since there are 4 possibilities (A, C, G, T) for each hidden node:
+
+$$
+4 \times 4 \times 4 \times 4 = 256
+$$
+
+## 3. Rearrange the expression $P(X|T)$ such that the number of operations is minimized. How many summation steps are required now for the calculation of $P(X|T)$?
+
+$$
+\begin{aligned}
+P(X|T) &= \sum_{Z_4}\sum_{Z_3}\sum_{Z_2}\sum_{Z_1}\pi(Z_4)P(X_5|Z_4)P(Z_3|Z_4)
+P(Z_2|Z_3)P(Z_1|Z_3)P(X_4|Z_2) P(X_3|Z_2) P(X_2|Z_1) P(X_1|Z_1) \\
+&= \sum_{Z_4} \pi(Z_4) P(X_5|Z_4)
+\sum_{Z_3} P(Z_3|Z_4)
+\sum_{Z_2} P(Z_2|Z_3) P(X_4|Z_2) P(X_3|Z_2)
+\sum_{Z_1} P(Z_1|Z_3)P(X_2|Z_1) P(X_1|Z_1) & (\text{distributivity})\\
+&= \underbrace{\sum_{Z_4} \pi(Z_4) P(X_5|Z_4)}_4
+\underbrace{\sum_{Z_3} P(Z_3|Z_4)}_{4 \times 4}
+\underbrace{\sum_{Z_2} P(Z_2|Z_3) P(X_4|Z_2) P(X_3|Z_2)}_{4 \times 4 (Z_2 \rightarrow X_4 \text{ branch}) + 4 \times 4 (Z_2 \rightarrow X_3 \text{ branch})}
+\underbrace{\sum_{Z_1} P(Z_1|Z_3)P(X_2|Z_1) P(X_1|Z_1)}_{4 \times 4 (Z_1 \rightarrow X_2 \text{ branch}) + 4 \times 4 (Z_1 \rightarrow X_1 \text{ branch})} \\
+\end{aligned}
+$$
+
+In total we have $(16+16) \times 2 + 16 + 4 = 52$ summations. 
+
+# Problem 14: Learning phylogenetic trees from sequence alignment data
+
+```{r, include=FALSE}
+library(ape)
+library(phangorn)
+```
+
+Load the dataset `ParisRT.txt`.
+
+```{r}
+data <- read.dna("ParisRT.txt", format="sequential")
+data
+```
+
+Create initial tree topology for the alignment using neighbor joining and K80 model.
+
+```{r}
+ini_tree <- NJ(dist.dna(data, model = "K80"))
+```
+
+Plot the initial tree.
+
+```{r}
+plot.phylo(ini_tree)
+```
+
+```{r}
+tree_ML <- pml(ini_tree, phyDat(data), model = "K80")
+tree_ML
+```
+
+Find the optimal parameters of K80 model for rate matrix.
+
+```{r}
+tree_optim_Q <- optim.pml(tree_ML, 
+                optQ = TRUE, 
+                optNni = FALSE, 
+                optBf = FALSE, 
+                optInv = FALSE, 
+                optGamma = FALSE, 
+                optEdge = FALSE, 
+                optRate = FALSE, 
+                optRooted = FALSE, 
+                model = "K80")
+```
+
+```{r}
+tree_optim_Q
+```
+
+Optimize for branch lengths, nucelotide substitution rates and tree topology simultaneously.
+
+```{r}
+tree_optim <- optim.pml(tree_ML, 
+                optQ = TRUE,       # rate matrix
+                optNni = TRUE,     # tree topology
+                optBf = FALSE,     # base frequencies
+                optInv = FALSE,    # proportion of var size
+                optGamma = FALSE,  # gamma rate param 
+                optEdge = TRUE,    # edge lengths
+                optRate = FALSE,   # overall rate
+                optRooted = FALSE, # edge lengths of a rooted tree
+                model = "K80")
+```
+
+```{r}
+tree_optim
+```
+
+Bootstrap on optimised model.
+
+TODO: answer what is exactly being resampled.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
+```
+
+```{r}
+plotBS(tree_optim$tree, bootstrap_trees, type = "phylogram")
+```
+
+`Mme_S` is more likely to affect patient `Mme_L`.
 
