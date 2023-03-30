@@ -5,7 +5,7 @@ author: "Team K - Minghang Li"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: [ "kpfonts" ]
+    extra_dependencies:  [ "amsthm", "kpfonts", "unicode-math" ]
 ---
 
 
