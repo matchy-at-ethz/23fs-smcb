@@ -169,9 +169,7 @@ tree_optim <- optim.pml(tree_ML,
 tree_optim
 ```
 
-Bootstrap on optimised model.
-
-TODO: answer what is exactly being resampled.
+Bootstrap on optimised model. The program resampled the nucleotides in the alignment (columns in the input matrix).
 
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
@@ -181,5 +179,6 @@ bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
 plotBS(tree_optim$tree, bootstrap_trees, type = "phylogram")
 ```
 
-`Mme_S` is more likely to affect patient `Mme_L`.
+`Mme_S` is more likely to affect patient `Mme_L`. The bootstrap support is 100% (in my run), suggesting `Mme_S` and `Mme_L` share a more recent ancestor (closer relationship) than `Mr D`
+
 
