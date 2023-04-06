@@ -1,11 +1,317 @@
 ---
-title: "Title"
+title: "Project 6 Sampling and variational inference"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: [ "kpfonts" ]
+    extra_dependencies: [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
 ---
 
+I'm sorry that I didn't manage to finish the project on time :(
+but I do want to get feedback for my finished version.
 
+Please give points using my unfinished version -- or if you would be so kind, 
+give points using my finished version with late submission deduction for the
+ parts I failed to finish on time.
+
+# Problem 15: Monte Carlo estimation of an expected value
+
+## Proof that $\mathbb{E}[\hat{g}(\mathbf{X})] = \mathbf{E}[g(X)]$
+
+\begin{proof}
+
+It's almost trivial that $\mathbb{E}[g(X)] = \mathbb{E}[g(X_i)]$ (because they are i.i.d from the same probability distribution as $X$).
+
+$$
+\begin{aligned}
+\mathbb{E}[\hat{g}(\mathbf{X})] &=
+\mathbb{E}\left[\frac{1}{N} \sum_{i=1}^N g(X_i)\right] \\
+&=\frac{1}{N} \mathbb{E}\left[\sum_{i=1}^{N}g(X_i)\right] \\
+&= \frac{1}{N} \sum_{i=1}^{N} \mathbb{E}[g(X_i)] \\
+&= \frac{1}{N} \sum_{i=1}^{N} \mathbb{E}[g(X)] \\
+&= \frac{N}{N} \mathbb{E}[g(X)] \\
+&= \mathbb{E}[g(X)]
+\end{aligned}
+$$
+
+\end{proof}
+
+
+## Proof that $Var(\hat{g}(\mathbf{X})) = \frac{Var(g(X))}{N}$
+
+
+\begin{proof}
+
+By Bienayme's identity, we know that for pairwise independent variables, we have $Var\left(\sum_{i=1}^{n} X_i\right) = \sum_{i=1}^n Var(X_i)$. 
+
+And we also have $Var(g(X_i)) = Var(g(X))$ (by the same reason stated in the first subquestion, they are i.i.d with the same variance as $Var(g(X))$). 
+
+The proof then follows:
+
+$$
+\begin{aligned}
+Var(\hat{g}(X)) 
+&= Var\left(\frac{1}{N}\sum_{i=1}^N g(X_i)\right) \\
+&= \frac{1}{N^2}Var\left(\sum_{i=1}^N g(X_i)\right) \\
+&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X_i)) \\ 
+&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X)) \\ 
+&= \frac{N}{N^2} Var(g(X)) \\
+&= \frac{Var(g(X))}{N}
+\end{aligned}
+$$
+
+\end{proof}
+
+<!-- Think about if those results also apply if X1, \..., XN are generated from a MCMC sampler (no need for demonstration here). -->
+
+# Problem 16: Sampling in the Rain Network
+
+## (a) Derive the expressions
+
+All "$=T$"s are grayed out in the derivation for the ease of my brain to interpret.
+
+Recall that given a Bayesian network with nodes in set $X$, for a certain node $x$ we have $P(x|X_{\setminus x}) = P(x|MB(x))$.
+
+From the structure of Markove Chain we can know that $S \perp R | C$
+
+With the knowledge learned at hand, we can derive the expressions:
+
+\newcommand{\eqT}{{\textcolor{lightgray}{=T}}}
+\newcommand{\eqF}{{\textcolor{black}{=F}}}
+
+### 1. Derive $P(C_{\eqT}|R_\eqT, S_\eqT, W_\eqT)$
+
+$$
+\begin{aligned}
+P(C_{\eqT} | R_\eqT,S_\eqT,W_\eqT)
+&= P(C_\eqT | R_\eqT, S_\eqT)
+& (\text{because }MB(C) = \{R, S\}) \\
+&= \frac{P(R_\eqT, S_\eqT | C_\eqT)P(C_\eqT)}{P(R_\eqT, S_\eqT)} \\
+&= \frac{P(R_\eqT | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{\sum_C P(R_\eqT | C) P(S_\eqT | C) P(C)}
+& (\text{because } S \perp R | C)
+\end{aligned}
+$$
+
+From the Bayesian network we know that:
+
+$$
+\begin{aligned}
+&P(C_\eqT) &&= 0.5\\
+&P(R_\eqT|C_\eqT) &&=0.8\\
+&P(S_\eqT|C_\eqT) &&=0.1\\
+&P(R_\eqT, S_\eqT) &&=
+P(R_\eqT|C_\eqT)P(S_\eqT|C_\eqT)P(C_\eqT)
++ P(R_\eqT|C_\eqF)P(S_\eqT|C_\eqF)P(C_\eqF) \\
+&&&= 0.8\cdot0.1\cdot0.5 + 0.2\cdot0.5\cdot0.5\\
+&&&= 0.09
+\end{aligned}
+$$
+
+Plug in the values, $P(C_\eqT|R_\eqT,S_\eqT,W_\eqT)$ is hence calculated (by the following code blocks) to be $\frac{4}{9}$
+
+```{r}
+P_C_T <- 0.5
+P_C_F <- 0.5
+P_R_T_given_C_T <- 0.8
+P_R_T_given_C_F <- 0.2
+P_S_T_given_C_T <- 0.1
+P_S_T_given_C_F <- 0.5
+
+P_R_T_and_S_T <- P_R_T_given_C_T * P_S_T_given_C_T * P_C_T + 
+                 P_R_T_given_C_F * P_S_T_given_C_F * P_C_F
+```
+
+```{r}
+P_C_T_give_R_T_and_S_T <- (P_R_T_given_C_T * P_S_T_given_C_T * P_C_T) / P_R_T_and_S_T
+P_C_T_give_R_T_and_S_T
+```
+
+### 2. Derive $P(C_{\eqT}|R_\eqF, S_\eqT, W_\eqT)$
+
+$$
+\begin{aligned}
+&P(C_\eqT | R_\eqF,S_\eqT,W_\eqT)
+&&= P(C_\eqT | R_\eqF, S_\eqT)
+& (\text{because }MB(C) = \{R, S\}) \\
+&&&= \frac{P(R_\eqF, S_\eqT | C_\eqT)P(C_\eqT)}{P(R_\eqF, S_\eqT)} \\
+&&&= \frac{P(R_\eqF | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{\sum_C P(R_\eqF | C) P(S_\eqT | C) P(C)}
+& (\text{because } S \perp R | C)
+\end{aligned}
+$$
+
+We know that $S$ and $R$ are binary variables that only take `True` or `False`, i.e., $P(R_\eqT) + P(R_\eqF) = 1$ and $P(S_\eqT) + P(S_\eqF) = 1$.
+
+Plug in the values, $P(C_\eqT|R_\eqF,S_\eqT,W_\eqT)$ is hence calculated (by the following code blocks) to be $\frac{1}{21}$
+
+```{r}
+P_R_F_given_C_T <- 1 - P_R_T_given_C_T
+P_R_F_given_C_F <- 1 - P_R_F_given_C_T
+P_R_F_and_S_T <- P_R_F_given_C_T * P_S_T_given_C_T * P_C_T + 
+                 P_R_F_given_C_F * P_S_T_given_C_F * P_C_F
+```
+
+
+```{r}
+P_C_T_give_R_F_and_S_T <- (P_R_F_given_C_T * P_S_T_given_C_T * P_C_T) / P_R_F_and_S_T
+P_C_T_give_R_F_and_S_T
+```
+
+### 3. Derive $P(R_{\eqT}|C_\eqT, S_\eqT, W_\eqT)$
+
+In the following derivation the entities that are canceled out inside the 
+condition probability are either because $S \perp R | C$ or
+$P(W|X_{\setminus{W}}) = P(W|MB(W))$.
+
+$$
+\begin{aligned}
+P (R_\eqT | C_\eqT, S_\eqT, W_\eqT) 
+&= \frac{P(R_\eqT, C_\eqT, S_\eqT, W_\eqT)}{P(C_\eqT, S_\eqT, W_\eqT)} \\
+&= \frac{
+  P(W_\eqT | R_\eqT, C_\eqT, S_\eqT)
+  P(R_\eqT, C_\eqT, S_\eqT)
+}{
+  P(W_\eqT | C_\eqT, S_\eqT) P(C_\eqT, S_\eqT)
+} \\
+&= \frac{
+  P(W_\eqT | R_\eqT, \cancel{C_\eqT}, S_\eqT)
+  P(R_\eqT | C_\eqT, \cancel{S_\eqT}) \cancel{P(C_\eqT, S_\eqT)}
+}{
+  P(W_\eqT | C_\eqT, S_\eqT) \cancel{P(C_\eqT, S_\eqT)}
+} \\
+&=\frac{
+  P(W_\eqT | R_\eqT, S_\eqT)
+  P(R_\eqT | C_\eqT)
+}{
+  \sum_R P(W_\eqT, R| C_\eqT, S_\eqT)
+} \\
+&= \frac{
+  P(W_\eqT | R_\eqT, S_\eqT)
+  P(R_\eqT | C_\eqT)
+}{
+  \sum_R P(W_\eqT| R, \cancel{C_\eqT}, S_\eqT) P(R| C_\eqT, \cancel{S_\eqT})
+}& (\text{Trying to make use of } P(W|R, S)) \\
+&= \frac{
+  P(W_\eqT | R_\eqT, S_\eqT)
+  P(R_\eqT | C_\eqT)
+}{
+  \sum_R P(W_\eqT| R, S_\eqT) P(R| C_\eqT)
+}
+\end{aligned}
+$$
+From the Bayesian network we know that
+
+$$
+\begin{aligned}
+&P(W_\eqT | R_\eqT, S_\eqT) &&= 0.99 \\
+&P(R_\eqT | C_\eqT)         &&= 0.8  \\
+&\sum_R P(W_\eqT| R, S_\eqT) P(R| C_\eqT) 
+ &&= P(W_\eqT| R_\eqT, S_\eqT) P(R_\eqT| C_\eqT) + 
+     P(W_\eqT| R_\eqF, S_\eqT) P(R_\eqF| C_\eqT) \\
+&&&= 0.99 \cdot 0.8 + 0.9 \cdot (1 - 0.8) \\
+&&&= 0.972
+\end{aligned}
+$$
+Plug in the values, we can find that $P(R_{\eqT}|C_\eqT, S_\eqT, W_\eqT) = \frac{22}{27}$
+
+```{r}
+P_W_T_given_R_T_and_S_T <- 0.99
+P_W_T_given_R_F_and_S_T <- 0.9
+P_W_T_given_R_T_and_S_F <- 0.9
+P_W_T_given_R_F_and_S_F <- 0.1
+```
+
+```{r}
+P_W_T_given_S_T_and_C_T <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T + 
+                           P_W_T_given_R_F_and_S_T * P_R_F_given_C_T
+```
+
+```{r}
+P_R_T_given_C_T_and_S_T_and_W_T <- (P_W_T_given_R_T_and_S_T * P_R_T_given_C_T) /
+                                   P_W_T_given_S_T_and_C_T
+P_R_T_given_C_T_and_S_T_and_W_T
+```
+
+### 4. Derive $P(R_\eqT|C_\eqF, S_\eqT, W_\eqT)$
+
+Following similar derivation as $P(R_\eqT|C_\eqT, S_\eqT, W_\eqT)$
+
+$$
+\begin{aligned}
+P(R_\eqT|C_\eqF,S_\eqT,W_\eqT)\\
+&= \frac{
+  P(W_\eqT|R_\eqT,S_\eqT)P(R_\eqT|C_\eqF)
+}{
+  \sum_R P(W_\eqT|R,S_\eqT)P(R|C_\eqF)
+} \\
+&= \frac{0.99 \cdot (1 - 0.8)}{
+  0.99 \cdot (1 - 0.8) + 0.9 \cdot (1 - 0.2)} \\
+&= \frac{11}{51}
+\end{aligned}
+$$
+
+```{r}
+P_R_T_given_C_F_and_S_T_and_W_T <- (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F) /
+                                  (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F + 
+                                   P_W_T_given_R_F_and_S_T * P_R_F_given_C_F)
+P_R_T_given_C_F_and_S_T_and_W_T
+```
+
+## 2. Implement the Gibbs sampler for the Bayesian network
+
+```{r, echo=FALSE}
+library(coda)
+library(doParallel)
+library(doRNG)
+library(foreach)
+library(Rlab)
+library(coda)
+```
+
+
+```{r}
+sample_CgivenR <- function(R){
+ if (R == F) {
+   C <- rbern(1, p=1/21)
+ } else {
+   C <- rbern(1, p=4/9)
+ } 
+  return(C)
+}
+
+sample_RgivenC <- function(C){
+  if (C == F) {
+    R <- rbern(1, p=11/51)
+  } else {
+    R <- rbern(1, p=22/27)
+  }
+  return(R)
+}
+```
+
+```{r}
+set.seed(2023)
+```
+
+```{r}
+gibbs_sampler <- function(niter) {
+  C <- rep(0,niter)
+  R <- rep(0,niter)
+  C[1]=1
+  R[1]=1
+  foreach (i=2:niter) %dorng% {
+    C[i] <- sample_CgivenR(R[i-1])
+    R[i] <- sample_RgivenC(C[i])
+  }
+  res <- data.frame(C=C,R=R)
+  print(res)
+  res_t <- table(res) / niter
+  return(res_t)
+}
+
+```
+
+```{r}
+res <- gibbs_sampler(100)
+res
+```
