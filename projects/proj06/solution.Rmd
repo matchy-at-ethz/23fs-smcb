@@ -476,8 +476,8 @@ $$
 &= \sum_C P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C)P(S_\eqT|C)P(C) \\
 &= P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C_\eqT)P(S_\eqT|C_\eqT)P(C_\eqT) \\
 &\phantom{=}+ P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C_\eqF)P(S_\eqT|C_\eqF)P(C_\eqF) \\
-&=0.99 \cdot 0.8 \cdot 0.1 \cdot 0.5 + 0.99 \cdot 0.2 \cdot 0.5\\
-&= 
+&= 0.99 \cdot 0.8 \cdot 0.1 \cdot 0.5 + 0.99 \cdot 0.2 \cdot 0.5 \cdot 0.5\\
+&= 0.0891
 \end{aligned}
 $$
 ```{r}
@@ -485,17 +485,60 @@ numerator <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T * P_S_T_given_C_T * P_C_T
   P_W_T_given_R_T_and_S_T * P_R_T_given_C_F * P_S_T_given_C_F * P_C_F
 numerator
 ```
+The denominator:
 
+$$
+\begin{aligned}
+\sum_C P(S_\eqT, W_\eqT, C) 
+&= \sum_C \sum_R P(W_\eqT, S_\eqT, R, C) \\
+&= \sum_C \sum_R P(W_\eqT | R, S_\eqT, \cancel{C})P(R, S_\eqT, C) \\
+&= \sum_C \sum_R P(W_\eqT | R, S_\eqT) P(R|C) P(S_\eqT| C)P(C) \\
+&= P(W_\eqT | R_\eqT, S_\eqT) P(R_\eqT|C_\eqT) P(S_\eqT| C_\eqT)P(C_\eqT) \\
+&\phantom{=}
++ P(W_\eqT | R_\eqF, S_\eqT) P(R_\eqF|C_\eqT) P(S_\eqT| C_\eqT)P(C_\eqT) \\
+&\phantom{=}
++ P(W_\eqT | R_\eqT, S_\eqT) P(R_\eqT|C_\eqF) P(S_\eqT| C_\eqF)P(C_\eqF) \\
+&\phantom{=}
++ P(W_\eqT | R_\eqF, S_\eqT) P(R_\eqF|C_\eqF) P(S_\eqT| C_\eqF)P(C_\eqF) \\
+&= 0.99 \cdot 0.8 \cdot 0.1 \cdot 0.5 +
+   0.9  \cdot (1 - 0.8) \cdot 0.1 \cdot 0.5  \\
+&\phantom{=}+ 0.99 \cdot 0.2 \cdot 0.5 \cdot 0.5 +
+   0.9  \cdot (1-0.2) \cdot 0.5 \cdot 0.5 \\
+&= 0.2781
+\end{aligned}
+$$
+```{r}
+denominator <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T * P_S_T_given_C_T * P_C_T +
+  P_W_T_given_R_F_and_S_T * P_R_F_given_C_T * P_S_T_given_C_T * P_C_T +
+  P_W_T_given_R_T_and_S_T * P_R_T_given_C_F * P_S_T_given_C_F * P_C_F +
+  P_W_T_given_R_F_and_S_T * P_R_F_given_C_F * P_S_T_given_C_F * P_C_F
+denominator
+```
 
+Plug back the values of the denominator and numerator, we have:
 
+$$
+P(R_\eqT | S_\eqT, W_\eqT) = \frac{0.0891}{0.2781} \approx 0.3204
+$$
 
+```{r}
+P_R_T_given_S_T_and_W_T_analytic <- numerator / denominator
+P_R_T_given_S_T_and_W_T_analytic
+```
+\pagebreak
 
+```{r}
+# Create a data frame with the three probabilities
+probs <- data.frame(
+  Probability = c("Estimation in (c)", "Re-estimation in (h)", "Analytic solution"),
+  Value = c(P_R_T_given_S_T_and_W_T,
+            P_R_T_given_S_T_and_W_T_reestimated, 
+            P_R_T_given_S_T_and_W_T_analytic)
+)
 
+# Use knitr::kable() to format the data frame as a table
+knitr::kable(probs, align = "l", caption = "Probabilities", row.names = FALSE)
+```
 
-
-
-
-
-
-
-
+The value obtained in (h) seems to be very close to the analytical solution.
+The value obtained in (c) is more different from the analytical solution but is expected since we only sampled 100 times.
