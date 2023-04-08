@@ -80,7 +80,7 @@ With the knowledge learned at hand, we can derive the expressions:
 \newcommand{\eqT}{{\textcolor{lightgray}{=T}}}
 \newcommand{\eqF}{{\textcolor{black}{=F}}}
 
-### 1. Derive $P(C_{\eqT}|R_\eqT, S_\eqT, W_\eqT)$
+### (a). Derive $P(C_{\eqT}|R_\eqT, S_\eqT, W_\eqT)$
 
 $$
 \begin{aligned}
@@ -244,8 +244,8 @@ P(R_\eqT|C_\eqF,S_\eqT,W_\eqT)\\
 }{
   \sum_R P(W_\eqT|R,S_\eqT)P(R|C_\eqF)
 } \\
-&= \frac{0.99 \cdot (1 - 0.8)}{
-  0.99 \cdot (1 - 0.8) + 0.9 \cdot (1 - 0.2)} \\
+&= \frac{0.99 \cdot 0.2}{
+  0.99 \cdot 0.2 + 0.9 \cdot (1 - 0.2)} \\
 &= \frac{11}{51}
 \end{aligned}
 $$
@@ -257,33 +257,34 @@ P_R_T_given_C_F_and_S_T_and_W_T <- (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F) /
 P_R_T_given_C_F_and_S_T_and_W_T
 ```
 
-## 2. Implement the Gibbs sampler for the Bayesian network
+## (b). Implement the Gibbs sampler for the Bayesian network
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(coda)
 library(doParallel)
 library(doRNG)
 library(foreach)
 library(Rlab)
-library(coda)
 ```
 
 
 ```{r}
 sample_CgivenR <- function(R){
- if (R == F) {
-   C <- rbern(1, p=1/21)
- } else {
-   C <- rbern(1, p=4/9)
- } 
+  C <- 0
+  if (R == F) {
+    C <- rbern(1, p=P_C_T_give_R_F_and_S_T)
+  } else {
+    C <- rbern(1, p=P_C_T_give_R_T_and_S_T)
+  }
   return(C)
 }
 
 sample_RgivenC <- function(C){
+  R <- 0
   if (C == F) {
-    R <- rbern(1, p=11/51)
+    R <- rbern(1, p=P_R_T_given_C_F_and_S_T_and_W_T)
   } else {
-    R <- rbern(1, p=22/27)
+    R <- rbern(1, p=P_R_T_given_C_T_and_S_T_and_W_T)
   }
   return(R)
 }
@@ -299,19 +300,202 @@ gibbs_sampler <- function(niter) {
   R <- rep(0,niter)
   C[1]=1
   R[1]=1
-  foreach (i=2:niter) %dorng% {
+  foreach (i=2:niter) %do% {
     C[i] <- sample_CgivenR(R[i-1])
     R[i] <- sample_RgivenC(C[i])
   }
   res <- data.frame(C=C,R=R)
-  print(res)
-  res_t <- table(res) / niter
-  return(res_t)
+  return(res)
 }
 
 ```
 
 ```{r}
-res <- gibbs_sampler(100)
+samples <- gibbs_sampler(100)
+res <- table(samples) / 100
 res
 ```
+
+## (c). Estimate the marginal probability of rain ($P(R_\eqT | S_\eqT, W_\eqT)$)
+
+Just sum over the $R=T$ column of the result table:
+
+```{r}
+P_R_T_given_S_T_and_W_T <- colSums(res)[[2]]
+P_R_T_given_S_T_and_W_T
+```
+
+## (d). Use the R function `acf()` to provide plots and estimates of the auto-correlation functions for the samples of both variables Rain and Cloudy. Provide estimates of the ESS.
+
+
+```{r}
+acf_C <- acf(samples$C)
+```
+```{r}
+ESS_C <- acf_C$n.used / (1 + 2 *sum(acf_C$acf))
+ESS_C
+```
+
+```{r}
+acf_R <- acf(samples$R)
+```
+
+```{r}
+ESS_R <- acf_R$n.used / (1 + 2 *sum(acf_R$acf))
+ESS_R
+```
+
+## (e) Draw 50,000 samples
+
+```{r}
+samples_50k_run1 <- gibbs_sampler(50000)
+res_50k_run1 <- table(samples_50k_run1) / 50000
+res_50k_run1
+```
+
+```{r}
+samples_50k_run2 <- gibbs_sampler(50000)
+res_50k_run2 <- table(samples_50k_run2) / 50000
+res_50k_run2
+```
+
+## (f) Plot the relative frequenceis of $R=T$ and $C=T$ up to each iteration $t$ against $t$, for two independent runs of the sampler
+
+```{r}
+calc_relative_freq <- function(samples) {
+  n <- length(x = samples)
+  rel_freq <- foreach(t=1:n, .combine = c) %dopar% {
+    return(sum(samples[1:t]/t))
+  }
+  return(rel_freq)
+}
+```
+
+```{r}
+num_cores <- detectCores()
+registerDoParallel(num_cores)
+start_time <- Sys.time()
+rel_freq_C_run1 <- calc_relative_freq(samples = samples_50k_run1$C)
+rel_freq_C_run2 <- calc_relative_freq(samples = samples_50k_run2$C)
+rel_freq_R_run1 <- calc_relative_freq(samples = samples_50k_run1$R)
+rel_freq_R_run2 <- calc_relative_freq(samples = samples_50k_run2$R)
+end_time <- Sys.time()
+end_time - start_time
+stopImplicitCluster()
+```
+Plot the lines
+
+```{r}
+x=1:50000
+plot(x, rel_freq_C_run1, col = "red", 
+     type="l",
+     xlab = "Iteration #", 
+     ylab = "Relative Frequency", 
+)
+lines(x, rel_freq_C_run2, col = "blue")
+
+# Add the third vector, rel_freq_R_run1, to the plot
+lines(x, rel_freq_R_run1, col = "green")
+
+# Add the fourth vector, rel_freq_R_run2, to the plot
+lines(x, rel_freq_R_run2, col = "orange")
+
+# Add a legend to the plot
+legend("topright", 
+       legend = c("C_run1", "C_run2", "R_run1", "R_run2"), 
+       col = c("red", "blue", "green", "orange"), 
+       lty = 1)
+
+# Add vertical lines at x = 7000 and x = 15000
+abline(v = c(7000, 15000), lty = 2, col = "black")
+```
+
+It seems that the relative frequencies start to plateau at around 7000 iterations. 
+Hence it's sufficient to do about 7000 iterations. 
+
+(And if you really want to be confident, maybe 15,000 iterations)
+
+## (g) Apply the *Gelman and Rubin* test and plot the potential scale reduction factor changes over the iterations using `gelman.plot()`.
+
+```{r}
+mcmcs<- mcmc.list(mcmc(data = samples_50k_run1, start = 1, end = 5e4),
+                  mcmc(data = samples_50k_run2, start = 1, end = 5e4))
+gelman.diag(mcmcs)
+gelman.plot(mcmcs)
+```
+
+It's clear that after about 7000 iterations there are almost no fluctuations in the
+shrink factors and they go very close to 1.0. It would be safe to set a brun-in 
+time of about 7000, or to be safer, 10000.
+
+## (h) Re-estimate $P(R=T|S=T,W=T)$ based on samples obtained after the burn-in time.
+
+```{r}
+samples_cut <- samples_50k_run1[1e4 + 1:5e4, ]
+```
+
+```{r}
+res_cut <- table(samples_cut) / 4e4
+res_cut
+```
+```{r}
+P_R_T_given_S_T_and_W_T_reestimated <- colSums(res_cut)[[2]]
+P_R_T_given_S_T_and_W_T_reestimated
+```
+## (i) Compute the probability analytically and compare with (c) and (h)
+
+### Estimation from (c)
+
+```{r, echo=FALSE}
+cat("The value computed in (c) is: ", P_R_T_given_S_T_and_W_T)
+```
+
+### Estimation from (h)
+
+```{r, echo=FALSE}
+cat("The value computed in (h) is: ", P_R_T_given_S_T_and_W_T_reestimated)
+```
+
+## Analytical compuation
+
+$$
+\begin{aligned}
+P(R_\eqT | S_\eqT, W_\eqT)
+&= \frac{P(R_\eqT, S_\eqT, W_\eqT)}{P(S_\eqT, W_\eqT)} \\
+&= \frac{\sum_C P(R_\eqT, S_\eqT, W_\eqT, C)}{\sum_C P(S_\eqT, W_\eqT, C)}
+\end{aligned}
+$$
+
+The numerator part:
+
+$$
+\begin{aligned}
+\sum_C P(R_\eqT, S_\eqT, W_\eqT, C) 
+&= \sum_C P(R_\eqT, S_\eqT, W_\eqT | C)P(C) \\
+&= \sum_C P(W_\eqT | R_\eqT, S_\eqT, \cancel{C})P(R_\eqT, S_\eqT|C)P(C) \\
+&= \sum_C P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C)P(S_\eqT|C)P(C) \\
+&= P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C_\eqT)P(S_\eqT|C_\eqT)P(C_\eqT) \\
+&\phantom{=}+ P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C_\eqF)P(S_\eqT|C_\eqF)P(C_\eqF) \\
+&=0.99 \cdot 0.8 \cdot 0.1 \cdot 0.5 + 0.99 \cdot 0.2 \cdot 0.5\\
+&= 
+\end{aligned}
+$$
+```{r}
+numerator <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T * P_S_T_given_C_T * P_C_T +
+  P_W_T_given_R_T_and_S_T * P_R_T_given_C_F * P_S_T_given_C_F * P_C_F
+numerator
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
