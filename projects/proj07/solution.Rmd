@@ -1,11 +1,108 @@
 ---
-title: "Title"
+title: "Projecy 7 Exact inference in graphical models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+    extra_dependencies:  [ "pdfpages", "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
 ---
 
+```{r, include=FALSE} 
+library(foreach)
+library(doParallel)
+```
+Problem 17 and 18 are handwritten (not energetic enough for formatting this time as I usually do) and are included using `pdfpages`. Thye don't fit under the title page so I put problem 19 at the beginning.
 
+# Problem 19: Message passing on a chain
+
+## (a) Store clique potentials in an R object
+
+```{r}
+# use the hint!
+clique_potentials <- array(dim = c(2, 2, 4), 
+                           dimnames = list(
+                             c("0", "1"), c("0", "1"),
+                             c("Psi12", "Psi23", "Psi34", "Psi45")))
+
+```
+
+```{r}
+X1 <- c(1/3, 2/3)
+X2 <- c(4/5, 2/3)
+X3 <- c(5/7, 1/3)
+X4 <- c(3/5, 2/5)
+X5 <- c(1/2, 7/9)
+```
+
+```{r}
+clique_potentials[ , 1, "Psi12"] <- (1 - X1) * (1 - X2)
+clique_potentials[ , 2, "Psi12"] <- (1 - X1) * X2
+clique_potentials[ ,  , "Psi23"] <- c(1-X3, X3)
+clique_potentials[ ,  , "Psi34"] <- c(1-X4, X4)
+clique_potentials[ ,  , "Psi45"] <- c(1-X5, X5)
+clique_potentials
+```
+
+## (b) Computing forward messages
+
+```{r message=FALSE, results='hide'}
+fwd_msg <- array(dim=c(5, 2),
+                 dimname=list(
+                   c("X1", "X2", "X3", "X4", "X5"),
+                   c("0", "1")
+                 ))
+fwd_msg["X1", ] <- c(1, 1)
+
+foreach(i=2:5) %do% {
+  fwd_msg[i, ] <- fwd_msg[i-1, ] %*% clique_potentials[, , i-1] 
+}
+```
+
+```{r}
+fwd_msg
+```
+
+## (c) Computing backward messages
+
+
+Initialize in such shape for easy computation :)
+
+```{r message=FALSE, results='hide'}
+bkwd_msg <- array(dim=c(2, 5),
+                 dimname=list(
+                   c("0", "1"),
+                   c("X1", "X2", "X3", "X4", "X5")
+                 ))
+bkwd_msg[, "X5"] <- c(1, 1)
+foreach (i=4:1) %do% {
+  bkwd_msg[, i] <- clique_potentials[, , i] %*% bkwd_msg[, i+1]
+}
+```
+
+```{r}
+bkwd_msg
+```
+## (d) Compute the marginal probability distribution for eahc node
+
+```{r results='hide'}
+marginal <- array(0, dim=c(5,2),
+                  dimname=list(
+                    c("P(X1)", "P(X2)", "P(X3)", "P(X4)", "P(X5)"),
+                    c("0", "1")))
+foreach (i=1:5) %do% {
+  marginal[i, ] <- fwd_msg[i, ] * bkwd_msg[, i]
+}
+Z <- rowSums(marginal)
+marginal <- marginal / Z
+```
+```{r}
+marginal
+```
+
+```{r echo=FALSE}
+print("The normalising constant Z is 1")
+print(Z)
+```
+
+\includepdf[pages=-]{smcb_project7.pdf}
