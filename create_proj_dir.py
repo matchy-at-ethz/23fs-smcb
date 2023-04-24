@@ -26,7 +26,7 @@ root = os.path.dirname(os.path.abspath(__file__))
 template_dir = 'template'
 
 # create the new project directory
-proj_dir = 'proj' + args.number
+proj_dir = args.number
 path_to_proj = os.path.join(root, 'projects', proj_dir)
 if os.path.exists(path_to_proj):
     print('Project directory already exists. Force overwrite? (y/n)', end=' ')
