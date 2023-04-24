@@ -1,0 +1,11 @@
+---
+title: "Title"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+author: "Team K - Minghang Li"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+---
+
+
