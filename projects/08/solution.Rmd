@@ -12,6 +12,14 @@ output:
 
 ```{r, include=FALSE}
 library(mnem)
+library(doParallel)
+library(foreach)
+library(unix)
+library(ggplot2)
+```
+
+```{r, include=FALSE}
+rlimit_as(1e12, 1e12)
 ```
 
 # Problem 20: Classical NEMs
@@ -172,7 +180,157 @@ network_score_b
 
 ## Subproblem 1
 
+Compute the transition probabilities from $G_t = u$ to $G_{t+1} \in \{ v_1, v_2 \}$ for different smoothness parameter $\lambda \in \{0.1, \ldots, 0.9\}$.
+
+By definition, the probability of transition from network $u$ to network $v$ is calculated by:
+
+$$
+\begin{aligned}
+T_{uv} &= P(\Phi_{t+1} = v | \Phi_{t} = u) \\
+       &= \frac{1}{C_u} (1 - \lambda)^{s_{uv}} \cdot \lambda
+\end{aligned}
+$$
+
+The distance $s_{uv}$ is defined as 
+
+$$
+s_{uv} = || u - v ||_1 := \sum_i \sum_{i'} |u_{ii'} - v_{ii'}|
+$$
+
+The normalizing constant $C_u$ is defined as
+
+$$
+C_u = \sum_w (1- \lambda)^{s_{uw}} \cdot \lambda
+$$
+where $w$ is all possible networks given the S genes at hand.
+
+So the basic implementation idea would be: 
+
+1. Represent $u$, $v_1$ and $v_2$ using adjacency matrix
+2. Compute $s_{uv_1}$ and $s_{uv_2}$ by "diff"ing the pairs of matrices respectively
+3. Generate all the networks $w$ using `mnem`, compute all the $s_{uw}$.
+4. Compute transition probability for each $\lambda$
+
+Implementation in R is in the following code blocks.
+
+```{r}
+S_genes <- c("S1", "S2", "S3", "S4")
+```
+
+```{r}
+# Initialization of u
+u <- array(
+  dim = c(4, 4),
+  dimnames = list(S_genes, S_genes)
+)
+#              S1, S2, S3, S4
+u["S1", ] <- c( 1,  1,  1,  0)
+u["S2", ] <- c( 0,  1,  1,  1)
+u["S3", ] <- c( 0,  0,  1,  1)
+u["S4", ] <- c( 0,  0,  0,  1)
+u
+```
+
+```{r}
+# Initialization of v1
+v1 <- array(
+  dim = c(4, 4),
+  dimnames = list(S_genes, S_genes)
+)
+#               S1, S2, S3, S4
+v1["S1", ] <- c( 1,  1,  1,  0)
+v1["S2", ] <- c( 0,  1,  1,  1)
+v1["S3", ] <- c( 0,  0,  1,  0)
+v1["S4", ] <- c( 0,  0,  0,  1)
+v1
+```
+
+```{r}
+# Initialization of v2
+v2 <- array(
+  dim = c(4, 4),
+  dimnames = list(S_genes, S_genes)
+)
+#               S1, S2, S3, S4
+v2["S1", ] <- c( 1,  0,  0,  0)
+v2["S2", ] <- c( 1,  1,  1,  0)
+v2["S3", ] <- c( 1,  0,  1,  0)
+v2["S4", ] <- c( 1,  0,  0,  1)
+v2
+```
+
+```{r}
+# compute s_uv1 and s_uv2
+s_uv1 <- sum(u != v1)
+s_uv2 <- sum(u != v2)
+```
+
+```{r}
+# generate all the possible networks
+all_networks <- mnem:::enumerate.models(S_genes, trans.close = FALSE)
+```
+
+```{r, results='hide'}
+# compute s_uw for all networks
+num_cores <- detectCores()
+registerDoParallel(num_cores)
+start <- Sys.time()
+s_uw <- foreach (i=1:length(all_networks), .combine = c) %dopar% {
+  sum(u != all_networks[[i]])
+}
+end <- Sys.time()
+end - start
+stopImplicitCluster()
+```
+```{r}
+compute_C <- function(lambda, s_uw) {
+  res <- foreach (i=1:length(s_uw), .combine = c) %dopar% {
+    (1 - lambda)^s_uw[i] * lambda
+  }
+  return(sum(res))
+}
+```
+
+```{r}
+# Compute transitive probability
+registerDoParallel(num_cores)
+start <- Sys.time()
+trans_prob <- foreach (lambda=seq(0.1, 0.9, by=0.1), .combine = rbind) %dopar% {
+  C_u <- compute_C(lambda = lambda, s_uw = s_uw)
+  res1 <- (1 - lambda)^s_uv1 * lambda / C_u
+  res2 <- (1 - lambda)^s_uv2 * lambda / C_u
+  return(c(res1, res2))
+}
+end <- Sys.time()
+end - start
+stopImplicitCluster()
+colnames(trans_prob) <- c("v1", "v2")
+rownames(trans_prob) <- sprintf("%.1f", seq(0.1, 0.9, 0.1))
+trans_prob
+```
+
 ## Subproblem 2
+
+Plot the transition probabilites as a function of $\lambda$ for $v_1$ and $v_2$.
+
+```{r}
+df <- data.frame(lambda = row.names(trans_prob), trans_prob, row.names = NULL)
+df$lambda <- as.numeric(df$lambda)
+```
+
+```{r}
+ggplot(data = df, aes(x = lambda, group = 1)) +
+  geom_line(aes(y = v1, color = "v1"), linetype = "dashed") +
+  geom_point(aes(y = v1, color = "v1"), size = 2) +
+  geom_line(aes(y = v2, color = "v2"), linetype = "dashed") +
+  geom_point(aes(y = v2, color = "v2"), size = 2) +
+  xlab("lambda") +
+  ylab("Transition probability") +
+  ggtitle("Transition probability from u to v1 and v2\nas a Function of lambda")
+```
+
+We can see that the transition probabilities of $v_1$ and $v_2$ converge when $\lambda$ is small and differ greatly when $\lambda$ is large. Dissimilar networks get penalized and result in lower transition probability as $\lambda$ increase. For similar networks like $v_1$, the probability to transit into them increases as we increase $\lambda$.
+
 
 # Problem 22: Mixture NEMs
 
