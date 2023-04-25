@@ -1,11 +1,193 @@
 ---
-title: "Title"
+title: "Project 8 Nested Effect Models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
+mainfont: "KpRoman"
+monofont: "Fira Code Regular Nerd Font Complete"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
+
+```{r, include=FALSE}
+library(mnem)
+```
+
+# Problem 20: Classical NEMs
+
+## Subproblem 1
+
+### Construct transitive closure and define $\Phi$
+
+Define a function to make any $\Phi$ matrix transitive closed by powering it up until convergence.
+
+```{r}
+transitive_closify <- function(phi) {
+  old_phi <- phi
+  while (TRUE) {
+    new_phi <- old_phi %*% phi
+    new_phi[new_phi > 0] <- 1
+    if (isTRUE(all.equal(new_phi, old_phi))) {
+      break
+    }
+    old_phi <- new_phi
+  }
+  return(new_phi)
+}
+```
+
+Construct $\Phi$ for Model (a).
+
+```{r}
+phi_a <- array(
+  dim = c(5, 5),
+  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                  c("S1", "S2", "S3", "S4", "S5"))
+)
+#                  S1, S2, S3, S4, S5
+phi_a["S1", ] <- c( 1,  0,  1,  1,  0)
+phi_a["S2", ] <- c( 0,  1,  0,  0,  1)
+phi_a["S3", ] <- c( 0,  0,  1,  1,  1)
+phi_a["S4", ] <- c( 0,  0,  0,  1,  1)
+phi_a["S5", ] <- c( 0,  0,  0,  0,  1)
+```
+
+```{r}
+phi_a <- transitive_closify(phi_a)
+phi_a
+```
+
+Construct $\Phi$ for Model (b).
+
+```{r}
+phi_b <- array(
+  dim = c(5, 5),
+  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                  c("S1", "S2", "S3", "S4", "S5"))
+)
+#                  S1, S2, S3, S4, S5
+phi_b["S1", ] <- c( 1,  0,  0,  1,  0)
+phi_b["S2", ] <- c( 0,  1,  0,  0,  1)
+phi_b["S3", ] <- c( 1,  0,  1,  1,  1)
+phi_b["S4", ] <- c( 0,  0,  0,  1,  1)
+phi_b["S5", ] <- c( 0,  0,  0,  0,  1)
+```
+
+```{r}
+phi_b <- transitive_closify(phi_b)
+phi_b
+```
+
+### Define $\Theta$
+
+Define $\Theta$ for Model (a).
+
+```{r}
+theta_a <- array(
+  dim = c(5, 6),
+  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                  c("E1", "E2", "E3", "E4", "E5", "E6"))
+)
+#                    E1, E2, E3, E4, E5, E6
+theta_a["S1", ] <- c( 0,  0,  0,  0,  0,  0)
+theta_a["S2", ] <- c( 0,  0,  0,  1,  0,  1)
+theta_a["S3", ] <- c( 1,  1,  0,  0,  0,  0)
+theta_a["S4", ] <- c( 0,  0,  1,  0,  0,  0)
+theta_a["S5", ] <- c( 0,  0,  0,  0,  1,  0)
+theta_a
+```
+
+Define $\Theta$ for Model (b).
+
+```{r}
+theta_b <- array(
+  dim = c(5, 6),
+  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                  c("E1", "E2", "E3", "E4", "E5", "E6"))
+)
+#                    E1, E2, E3, E4, E5, E6
+theta_b["S1", ] <- c( 1,  1,  0,  0,  0,  0)
+theta_b["S2", ] <- c( 0,  0,  0,  1,  0,  1)
+theta_b["S3", ] <- c( 0,  0,  0,  0,  0,  0)
+theta_b["S4", ] <- c( 0,  0,  1,  0,  0,  0)
+theta_b["S5", ] <- c( 0,  0,  0,  0,  1,  0)
+theta_b
+```
+
+### Determine the corresponding expected effect patterns ($F$)
+
+```{r}
+F_a <- phi_a %*% theta_a
+F_a
+```
+```{r}
+F_b <- phi_b %*% theta_b
+F_b
+```
+
+## Subproblem 2
+
+If we assume no noise (no false positives and false negatives)... then the $D$ matrix is simply the $F$ matrix transpose.
+
+```{r}
+D_a <- t(F_a)
+D_a
+```
+
+```{r}
+D_b <- t(F_b)
+D_b
+```
+
+Given the discrete data $D_a$ and $D_b$ (sorry for the different notation from the exercise pdf) it's not possible to tell apart the two models because they are identical.
+
+```{r}
+all.equal(D_a, D_b)
+```
+
+## Subproblem 3
+
+Calculate the marginal log-likelihood ratio (network score) given the data by setting the false positive rate to be 5\% and the false negative rate to be 1\%.
+
+```{r}
+network_score_a <- scoreAdj(D_a, 
+                            adj = phi_a, 
+                            method = "disc",
+                            fpfn = c(0.05, 0.01)
+                            )$score
+network_score_a
+```
+
+```{r}
+network_score_b <- scoreAdj(D_b, 
+                            adj = phi_b, 
+                            method = "disc",
+                            fpfn = c(0.05, 0.01)
+                            )$score
+network_score_b
+```
+
+# Problem 21: Hidden Markov NEMs
+
+## Subproblem 1
+
+## Subproblem 2
+
+# Problem 22: Mixture NEMs
+
+## Subproblem 1
+
+## Subproblem 2
+
+### (a) Compute expected effect pattern $(\rho^T\phi_k\theta_k)^T$
+
+### (b) 
+
+## Subproblem 3
+
+
+
+
 
 
