@@ -336,16 +336,100 @@ We can see that the transition probabilities of $v_1$ and $v_2$ converge when $\
 
 ## Subproblem 1
 
+Determine cellular perturbation map $\rho$ where $\rho_{ic} = 1$ if cell $c$ is perturbed by a knowdown of S-gene $i$. 
+
+```{r}
+S_genes <- c("S1", "S2")
+E_genes <- c("E1", "E2")
+cells   <- c("C1", "C2", "C3", "C4")
+```
+
+```{r}
+rho = array(dim = c(2, 4),
+            dimnames = list(S_genes, cells))
+#                C1, C2, C3, C4
+rho["S1", ] <- c( 1,  0,  1,  0)
+rho["S2", ] <- c( 0,  1,  1,  1)
+rho
+```
+
 ## Subproblem 2
+
+Assume $\{C_1, C_2\}$ are generated from $F_1$ and $\{C_3, C_4\}$ are generated from $F_2$, compute the *noiseless* log odds matrix $R$, where $R_{jc} > 0$ means that the perturbation on cell $c$ has an effect on E-gene $j$.
 
 ### (a) Compute expected effect pattern $(\rho^T\phi_k\theta_k)^T$
 
-### (b) 
+Of course need to define $\Phi$ and $\Theta$ again for $F_1$ and $F_2$.
+
+```{r}
+phi_1 <- array(dim = c(2, 2), dimnames = list(S_genes, S_genes))
+#                  S1, S2
+phi_1["S1", ] <- c( 1,  1)
+phi_1["S2", ] <- c( 0,  1)
+
+theta_1 <- array(dim = c(2, 2), dimnames = list(S_genes, E_genes))
+#                    E1, E2
+theta_1["S1", ] <- c( 1,  0)
+theta_1["S2", ] <- c( 0,  1)
+```
+
+```{r}
+phi_2 <- array(dim = c(2, 2), dimnames = list(S_genes, S_genes))
+#                  S1, S2
+phi_2["S1", ] <- c( 1,  0)
+phi_2["S2", ] <- c( 1,  1)
+
+theta_2 <- array(dim = c(2, 2), dimnames = list(S_genes, E_genes))
+#                    E1, E2
+theta_2["S1", ] <- c( 0,  1)
+theta_2["S2", ] <- c( 1,  0)
+```
+
+```{r}
+EEP_1 <- t(t(rho) %*% phi_1 %*% theta_1)
+EEP_1[EEP_1 > 1] <- 1
+EEP_1
+```
+```{r}
+EEP_2 <- t(t(rho) %*% phi_2 %*% theta_2)
+EEP_2[EEP_2 > 1] <- 1
+EEP_2
+```
+
+### (b) Extract the corresponding colum from the expected effect patterns and put it into $R$
+
+```{r}
+# C1, C2 from F1; C3, C4 from F2
+R <- cbind(EEP_1[, 1:2], EEP_2[, 3:4])
+R[R == 0] <- -1
+R
+```
 
 ## Subproblem 3
 
+Calculate the responsibilities $\Gamma$ given mixture weights $\pi = (0.44, 0.56)$. Then update the mixture weights. (Well, EM again!)
 
+```{r}
+pi <- c(0.44, 0.56)
+```
 
+```{r}
+# log likelihood
+L1 <- t(EEP_1) %*% R
+L2 <- t(EEP_2) %*% R
 
+gamma <- rbind(
+  diag(pi[1] * exp(L1) / (pi[1] * exp(L1) + pi[2] * exp(L2))),
+  diag(pi[2] * exp(L2) / (pi[1] * exp(L1) + pi[2] * exp(L2)))
+)
+gamma
+```
 
+```{r}
+pi[1] <- mean(gamma[1, ])
+pi[2] <- mean(gamma[2, ])
+```
 
+```{r}
+pi
+```
