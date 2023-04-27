@@ -2,10 +2,12 @@
 title: "Title"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
+mainfont: "KpRoman"
+monofont: "Fira Code Regular Nerd Font Complete"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
 
