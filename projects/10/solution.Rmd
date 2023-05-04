@@ -1,5 +1,5 @@
 ---
-title: "Title"
+title: "Project 10 Structured sparsity in genetics"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team K - Minghang Li"
 mainfont: "KpRoman"
@@ -10,4 +10,89 @@ output:
     extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
+# Problem 28: Uniqueness of predictions from the lasso
 
+\begin{proof}
+To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$, it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove by contradiction.
+
+Let the solution set be denoted as $S$, we have $\hat{\beta}_1, \hat{\beta}_2 \in S$. 
+
+Since $S$ is convex, we also have $\alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2 \in S$. 
+
+So that we have:
+
+\begin{equation} \label{eq:1}
+\frac{1}{2}
+\left\lVert
+  \mathbf{y} - \mathbf{X} \left(
+    \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+  \right)
+\right\rVert
++
+\lambda \left\lVert
+\alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right\rVert
+=
+c^*
+\end{equation}
+
+Define the loss function as $f: S \mapsto \lVert \mathbf{y} - \mathbf{X} \beta \rVert_2^2$. We know that the lineare loss function is stirctly convex, so that we have:
+
+\begin{equation} \label{eq:2}
+f\left(
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right) <
+\alpha f(\hat{\beta}_1) +
+(1 - \alpha)f(\hat{\beta}_2)
+\end{equation}
+
+Similarly, since $l_1$-nrom is convex, we have:
+
+\begin{equation} \label{eq:3}
+\left\lVert
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right\rVert_1
+\leq
+\alpha\lVert \hat{\beta}_1 \rVert
++ (1 - \alpha) \lVert \hat{\beta}_2 \rVert
+\end{equation}
+
+Combining Equation \ref{eq:2} and Equation \ref{eq:3}, we can start the following derivation:
+
+$$
+\begin{aligned}
+\frac{1}{2}
+f\left(
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right) + \lambda \left\lVert
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right\rVert &<
+\alpha\left(
+  f(\hat{\beta}_1) + \lambda \lVert\hat{\beta}_1\rVert
+\right) +
+(1 - \alpha) \left(
+  f(\hat{\beta}_2) + \lambda \lVert\hat{\beta}_2\rVert)
+\right) \\
+&= \alpha c^* + (1-\alpha) c^* \\
+&= c^*
+\end{aligned}
+$$
+Just a re-write:
+
+\begin{equation} \label{eq:4}
+\frac{1}{2}
+f\left(
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right) + \lambda \left\lVert
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right\rVert
+< c^*
+\end{equation}
+
+Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that our assumption $\hat{\beta}_1 \neq \hat{\beta}_2$ is wrong.
+
+\end{proof}
+
+# Problem 29: Ridge regression solution
+
+# Problem 30: Variable selection under various norms
