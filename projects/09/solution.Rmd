@@ -32,7 +32,7 @@ set.seed(2023)
 
 # Problem 23: d-separation
 
-## (i) Write down all the variables that are d-sepparated from $A$ given ${C, D}$
+## (i) Write down all the variables that are d-separated from $A$ given ${C, D}$
 
 Just $G$ (because given $A \cancel{\perp} B | D$, hence $B$ is not d-separated from $A$ and consequently $B$'s descendents $F$ and $E$ are also not d-separated).
 
@@ -40,19 +40,19 @@ Just $G$ (because given $A \cancel{\perp} B | D$, hence $B$ is not d-separated f
 
 We have the Theorem (Verma & Pearl): $A$ is d-separated from $B$ by $C$ *if and only if* the join distribution over all variables satisfied $A \perp B | C$.
 
-1. $B \perp C | D$: **Wrong**.
+1. $B \perp C | D$: **False**.
 
    $C$ and $B$ are not d-separated because in the path $B-D-A-C$ the arrows meet head-to-head at $D$.
-2. $G \perp E | D$: **Wrong**. 
+2. $G \perp E | D$: **False**. 
 
    $G$ and $E$ are not d-separated because in the path $E-F-B-D-A-C-G$ the arrows meet head-to-head at $D$.
-3. $C \perp F | A$: **Correct**. 
+3. $C \perp F | A$: **True**. 
 
    $C$ and $F$ are d-separated because the arrows meet tail-to-tail at $A$.
-4. $C \perp E | MB(C)$: **Wrong**. 
+4. $C \perp E | MB(C)$: **True**. 
 
-   Given $MB(C) = {A, D, G}$, $C$ and $E$ are not d-separated because in the path $E-F-B-D-A-C$ the arrows meet head-to-head at $D$ and $D \in MB(C)$.
-
+   Given $MB(C) = {A, D, G}$, $C$ and $E$ are d-separated because in every path from $E$ to $C$, it is either blockec by $A$ (tail-to-tail) or $D$ head-to-tail.
+   
 ---
 
 Load data for Problem 24 - 27.
