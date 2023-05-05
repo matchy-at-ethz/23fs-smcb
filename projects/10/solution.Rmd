@@ -10,6 +10,12 @@ output:
     extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
+```{r, include=FALSE}
+library(caret)
+library(glmnet)
+library(pROC)
+```
+
 # Problem 28: Uniqueness of predictions from the lasso
 
 \begin{proof}
@@ -61,12 +67,13 @@ Combining Equation \ref{eq:2} and Equation \ref{eq:3}, we can start the followin
 
 $$
 \begin{aligned}
-\frac{1}{2}
+&\phantom{= }\frac{1}{2}
 f\left(
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right) + \lambda \left\lVert
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
-\right\rVert &<
+\right\rVert \\
+&<
 \alpha\left(
   f(\hat{\beta}_1) + \lambda \lVert\hat{\beta}_1\rVert
 \right) +
@@ -95,30 +102,71 @@ Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that ou
 
 # Problem 29: Ridge regression solution
 
-Ridge regression is basically adding a $l_2$ regularization term to the original linear least square loss function $f$:
+Given $n \times p$ matrix $\mathbf{X}$, response $n$-vector $\mathbf{y}$, and the parameter $p$-vector $\beta$, consider augmenting $\mathbf{X}$ with rows corresponding to $\sqrt{\lambda}$ times a $p \times p$ identity matrix $I$:
 
 $$
-\frac{1}{2} \left\lVert
-  \mathbf{y} - \mathbf{X}\beta
-\right\rVert_2^2
-+
-\lambda \lVert \beta \rVert_2^2
+\mathbf{X}_* = \begin{pmatrix}
+  \mathbf{X} \\
+  \sqrt{\lambda} \mathbf{I}
+\end{pmatrix}
 $$
 
-Expanding this modified loss function:
+and $\mathbf{y}$ is similarly augmented with $p$ zeros at its end into $\mathbf{y}_*$.
 
-$$
+Now, the least square objective function on the modified dataset turns out to be:
+
+\begin{equation} \label{eq:5}
 \begin{aligned}
-\frac{1}{2} \left\lVert
-  \mathbf{y} - \mathbf{X}\beta
-\right\rVert_2^2
-+
-\lambda \lVert \beta \rVert_2^2
-&=
-(\mahtbf{y} - \mathbf{X} \beta)^T (\mathbf{y} -\mathbf{X}\beta) +
-\lambda \beta^T \beta
-&=
+&\phantom{=} (\mathbf{y}_* - \mathbf{X}_* \beta)^T
+(\mathbf{y}_* - \mathbf{X}_* \beta) \\
+&= 
+  \mathbf{y}_*^T \mathbf{y}_* 
+- 2\mathbf{y}_*^T\mathbf{X}_*\beta 
++ \beta^T\mathbf{X}_*^T\mathbf{X}_*\beta
 \end{aligned}
-$$
+\end{equation}
+
+
+The solution to the linear regression on the modified dataset hence follows:
+
+\begin{equation} \label{eq:6}
+\hat{\beta} = 
+  (\mathbf{X}_*^T\mathbf{X}_*)^{-1}
+  \mathbf{X}_*^T\mathbf{y}
+\end{equation}
+
+Since we are just padding $\mathbf{y}$ with zeros, the augmented part of $\mathbf{X}_*$ will not have any effect when it is multiplied by $\mathbf{y}_*^T$:
+
+\begin{equation} \label{eq:7}
+\mathbf{y}_*^T \mathbf{X}_* = \mathbf{y}^T\mathbf{X}
+\end{equation}
+
+And finally with augmented dataset $\mathbf{X}_*$ we have:
+
+\begin{equation} \label{eq:8}
+\begin{aligned}
+&\phantom{=}\mathbf{X}_*^T\mathbf{X}_* \\
+&= \begin{pmatrix}
+  \mathbf{X}^T & \sqrt{\lambda}\mathbf{I}
+\end{pmatrix} \begin{pmatrix}
+  \mathbf{X} \\ \sqrt{\lambda}\mathbf{I}
+\end{pmatrix} \\
+&= \mathbf{X}^T\mathbf{X} + \lambda\mathbf{I}
+\end{aligned}
+\end{equation}
+
+Plug Equation \ref{eq:7} and Equation \ref{eq:8} back into Equation \ref{eq:6}, we delightfully sees that performing linear regression on the modified dataset gives:
+
+\begin{equation}
+\hat{\beta} 
+= (\mathbf{X}^T \mathbf{X} + \lambda \mathbf{I})^{-1}
+  \mathbf{X}^T \mathbf{y}
+\end{equation}
+
+which is just the ridge regression solution.
+
+\pagebreak
 
 # Problem 30: Variable selection under various norms
+
+TODO
