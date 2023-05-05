@@ -15,9 +15,9 @@ output:
 \begin{proof}
 To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$, it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove by contradiction.
 
-Let the solution set be denoted as $S$, we have $\hat{\beta}_1, \hat{\beta}_2 \in S$. 
+Let the solution set be denoted as $S$, we have $\hat{\beta}_1, \hat{\beta}_2 \in S$.
 
-Since $S$ is convex, we also have $\alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2 \in S$. 
+Since $S$ is convex, we also have $\alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2 \in S$.
 
 So that we have:
 
@@ -94,5 +94,31 @@ Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that ou
 \end{proof}
 
 # Problem 29: Ridge regression solution
+
+Ridge regression is basically adding a $l_2$ regularization term to the original linear least square loss function $f$:
+
+$$
+\frac{1}{2} \left\lVert
+  \mathbf{y} - \mathbf{X}\beta
+\right\rVert_2^2
++
+\lambda \lVert \beta \rVert_2^2
+$$
+
+Expanding this modified loss function:
+
+$$
+\begin{aligned}
+\frac{1}{2} \left\lVert
+  \mathbf{y} - \mathbf{X}\beta
+\right\rVert_2^2
++
+\lambda \lVert \beta \rVert_2^2
+&=
+(\mahtbf{y} - \mathbf{X} \beta)^T (\mathbf{y} -\mathbf{X}\beta) +
+\lambda \beta^T \beta
+&=
+\end{aligned}
+$$
 
 # Problem 30: Variable selection under various norms
