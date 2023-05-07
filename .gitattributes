@@ -1,0 +1,3 @@
+renv/* linguist-generated
+*.Rmd linguist-language=R
+
