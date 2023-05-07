@@ -21,7 +21,6 @@ library(igraph)
 library(reshape2)
 ```
 
-
 ```{r, include=FALSE}
 rlimit_as(1e12, 1e12)
 ```
@@ -34,25 +33,28 @@ set.seed(2023)
 
 ## (i) Write down all the variables that are d-separated from $A$ given ${C, D}$
 
-Just $G$ (because given $A \cancel{\perp} B | D$, hence $B$ is not d-separated from $A$ and consequently $B$'s descendents $F$ and $E$ are also not d-separated).
+Just $G$ (because given $A \cancel{\perp} B | D$, hence $B$ is not d-separated
+ from $A$ and consequently $B$'s descendents $F$ and $E$ are also not d-separated).
 
 ## (ii) Indicate whether each statement is true or false and expalin your choice.
 
-We have the Theorem (Verma & Pearl): $A$ is d-separated from $B$ by $C$ *if and only if* the join distribution over all variables satisfied $A \perp B | C$.
+We have the Theorem (Verma & Pearl): $A$ is d-separated from $B$ by $C$
+ *if and only if* the join distribution over all variables satisfied
+ $A \perp B | C$.
 
 1. $B \perp C | D$: **False**.
 
    $C$ and $B$ are not d-separated because in the path $B-D-A-C$ the arrows meet head-to-head at $D$.
-2. $G \perp E | D$: **False**. 
+2. $G \perp E | D$: **False**.
 
    $G$ and $E$ are not d-separated because in the path $E-F-B-D-A-C-G$ the arrows meet head-to-head at $D$.
-3. $C \perp F | A$: **True**. 
+3. $C \perp F | A$: **True**.
 
    $C$ and $F$ are d-separated because the arrows meet tail-to-tail at $A$.
-4. $C \perp E | MB(C)$: **True**. 
+4. $C \perp E | MB(C)$: **True**.
 
    Given $MB(C) = {A, D, G}$, $C$ and $E$ are d-separated because in every path from $E$ to $C$, it is either blockec by $A$ (tail-to-tail) or $D$ head-to-tail.
-   
+
 ---
 
 Load data for Problem 24 - 27.
@@ -73,16 +75,21 @@ ggplot(mvn.dag, aes(x = A, y = B)) +
  # Add linear regression line and R-squared value to better show that there's no correlation
   geom_smooth(method = "lm", se = FALSE, color = "red") +
   annotate("text", x = max(mvn.dag$A), y = max(mvn.dag$B),
-           label = paste("R-square =", round(summary(lm(B ~ A, data = mvn.dag))$r.squared, 2)), 
+           label = paste("R-square =",
+                         round(summary(lm(B ~ A, data = mvn.dag))$r.squared, 2)),
            hjust = 1, vjust = 1, color = "red")
 ```
 
-The (very scattered) plot suggests that $A$ and $B$ are marginally independent (no correlation, $R^2 = 0$). And it confirms with Figure 2 because it also suggests that $A$ and $B$ are marginally independent.
+The (very scattered) plot suggests that $A$ and $B$ are marginally independent
+ (no correlation, $R^2 = 0$). And it confirms with Figure 2 because it also
+ suggests that $A$ and $B$ are marginally independent.
 
 ```{r}
 cor.test(mvn.dag$A, mvn.dag$B)
 ```
-The result of `cor.test()` on $A$ and $B$ also confirms that there's no correlation between $A$ and $B$ (the p-value is 0.84, so we cannot reject the null hypothesis that there's no correlation between $A$ and $B$).
+The result of `cor.test()` on $A$ and $B$ also confirms that there's no
+ correlation between $A$ and $B$ (the p-value is 0.84, so we cannot reject the
+ null hypothesis that there's no correlation between $A$ and $B$).
 
 # Problem 25: Testing for partial correlation
 
@@ -107,7 +114,7 @@ ggplot(data = data.frame(resid_A = resid_A, resid_B = resid_B, resid_AB = resid_
   ylab("Residuals of B (regressed on C)") +
   ggtitle("Plot of Residuals of A vs. Residuals of B") +
   annotate("text", x = max(resid_A), y = max(resid_B),
-           label = paste("R^2 =", round(summary(model_resid)$r.squared, 2)), 
+           label = paste("R^2 =", round(summary(model_resid)$r.squared, 2)),
            hjust = 1, vjust = 1, color = "red")
 ```
 
@@ -117,14 +124,17 @@ There seems to be a correlation between $A|C$ and $B|C$.
 cor.test(resid_A, resid_B)
 ```
 
-With a p-value of `6.6e-13`, we can reject the null hypothesis that $A|C$ and $B|C$ are not correlated, hence $A$ and $B$ are not conditionally independent given $C$. This also confirms with the uderlying DAG in Figure 2 because $A$ and $B$ explain away each other given $C$.
+With a p-value of `6.6e-13`, we can reject the null hypothesis that $A|C$ and
+ $B|C$ are not correlated, hence $A$ and $B$ are not conditionally independent
+ given $C$. This also confirms with the uderlying DAG in Figure 2 because $A$
+ and $B$ explain away each other given $C$.
 
 # Problem 26: Running the PC algorithm
 
 ```{r}
-res <- pc(suffStat = list(C=cor(mvn.dag), n=nrow(mvn.dag)), 
-          indepTest = gaussCItest, 
-          alpha = 0.01, 
+res <- pc(suffStat = list(C=cor(mvn.dag), n=nrow(mvn.dag)),
+          indepTest = gaussCItest,
+          alpha = 0.01,
           labels = colnames(mvn.dag))
 ```
 
@@ -132,14 +142,17 @@ res <- pc(suffStat = list(C=cor(mvn.dag), n=nrow(mvn.dag)),
 iplotPC(res)
 ```
 
-The PC algorithm has successfully learned the correct graph. The colliders are also successfully identified.
+The PC algorithm has successfully learned the correct graph. The colliders are
+also successfully identified.
 
-If the significance level $\alpha$ increase, more edges can get accepted, making the graph become more dense. (The code block below showed a very unrealistic setting)
+If the significance level $\alpha$ increase, more edges can get accepted, making
+ the graph become more dense. (The code block below showed a very unrealistic
+ setting)
 
 ```{r}
-not_reasonable_res <- pc(suffStat = list(C=cor(mvn.dag), n=nrow(mvn.dag)), 
-          indepTest = gaussCItest, 
-          alpha = 0.9, 
+not_reasonable_res <- pc(suffStat = list(C=cor(mvn.dag), n=nrow(mvn.dag)),
+          indepTest = gaussCItest,
+          alpha = 0.9,
           labels = colnames(mvn.dag))
 iplotPC(not_reasonable_res)
 ```
@@ -178,7 +191,8 @@ maxBN <- learnBN(score, algorithm = "orderIter")
 plot.igraph(graph.adjacency(maxBN$CPDAG))
 ```
 
-We see that as $\alpha_\mu$ increases, the graph become denser and denser. The colliders are preserved for every learned graph though.
+We see that as $\alpha_\mu$ increases, the graph become denser and denser. The
+ colliders are preserved for every learned graph though.
 
 
 ```{r}
@@ -199,4 +213,3 @@ ggplot(edgeposterior_df, aes(x = col, y = row, fill = value)) +
   scale_y_discrete(limits = c("A", "B", "C", "D", "E", "F")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-

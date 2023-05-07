@@ -8,11 +8,13 @@ output:
     extra_dependencies:  [ "pdfpages", "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
 ---
 
-```{r, include=FALSE} 
+```{r, include=FALSE}
 library(foreach)
 library(doParallel)
 ```
-Problem 17 and 18 are handwritten (not energetic enough for formatting this time as I usually do) and are included using `pdfpages`. Thye don't fit under the title page so I put problem 19 at the beginning.
+Problem 17 and 18 are handwritten (not energetic enough for formatting this time
+ as I usually do) and are included using `pdfpages`. Thye don't fit under the
+title page so I put problem 19 at the beginning.
 
 # Problem 19: Message passing on a chain
 
@@ -20,7 +22,7 @@ Problem 17 and 18 are handwritten (not energetic enough for formatting this time
 
 ```{r}
 # use the hint!
-clique_potentials <- array(dim = c(2, 2, 4), 
+clique_potentials <- array(dim = c(2, 2, 4),
                            dimnames = list(
                              c("0", "1"), c("0", "1"),
                              c("Psi12", "Psi23", "Psi34", "Psi45")))
@@ -55,7 +57,7 @@ fwd_msg <- array(dim=c(5, 2),
 fwd_msg["X1", ] <- c(1, 1)
 
 foreach(i=2:5) %do% {
-  fwd_msg[i, ] <- fwd_msg[i-1, ] %*% clique_potentials[, , i-1] 
+  fwd_msg[i, ] <- fwd_msg[i-1, ] %*% clique_potentials[, , i-1]
 }
 ```
 

@@ -28,7 +28,8 @@ rlimit_as(1e12, 1e12)
 
 ### Construct transitive closure and define $\Phi$
 
-Define a function to make any $\Phi$ matrix transitive closed by powering it up until convergence.
+Define a function to make any $\Phi$ matrix transitive closed by powering it up
+ until convergence.
 
 ```{r}
 transitive_closify <- function(phi) {
@@ -136,7 +137,8 @@ F_b
 
 ## Subproblem 2
 
-If we assume no noise (no false positives and false negatives)... then the $D$ matrix is simply the $F$ matrix transpose.
+If we assume no noise (no false positives and false negatives)... then the $D$
+ matrix is simply the $F$ matrix transpose.
 
 ```{r}
 D_a <- t(F_a)
@@ -148,7 +150,9 @@ D_b <- t(F_b)
 D_b
 ```
 
-Given the discrete data $D_a$ and $D_b$ (sorry for the different notation from the exercise pdf) it's not possible to tell apart the two models because they are identical.
+Given the discrete data $D_a$ and $D_b$ (sorry for the different notation from
+ the exercise pdf) it's not possible to tell apart the two models because they
+  are identical.
 
 ```{r}
 all.equal(D_a, D_b)
@@ -156,11 +160,12 @@ all.equal(D_a, D_b)
 
 ## Subproblem 3
 
-Calculate the marginal log-likelihood ratio (network score) given the data by setting the false positive rate to be 5\% and the false negative rate to be 1\%.
+Calculate the marginal log-likelihood ratio (network score) given the data by
+ setting the false positive rate to be 5\% and the false negative rate to be 1\%.
 
 ```{r}
-network_score_a <- scoreAdj(D_a, 
-                            adj = phi_a, 
+network_score_a <- scoreAdj(D_a,
+                            adj = phi_a,
                             method = "disc",
                             fpfn = c(0.05, 0.01)
                             )$score
@@ -168,8 +173,8 @@ network_score_a
 ```
 
 ```{r}
-network_score_b <- scoreAdj(D_b, 
-                            adj = phi_b, 
+network_score_b <- scoreAdj(D_b,
+                            adj = phi_b,
                             method = "disc",
                             fpfn = c(0.05, 0.01)
                             )$score
@@ -180,9 +185,11 @@ network_score_b
 
 ## Subproblem 1
 
-Compute the transition probabilities from $G_t = u$ to $G_{t+1} \in \{ v_1, v_2 \}$ for different smoothness parameter $\lambda \in \{0.1, \ldots, 0.9\}$.
+Compute the transition probabilities from $G_t = u$ to $G_{t+1} \in \{ v_1, v_2 \}$
+ for different smoothness parameter $\lambda \in \{0.1, \ldots, 0.9\}$.
 
-By definition, the probability of transition from network $u$ to network $v$ is calculated by:
+By definition, the probability of transition from network $u$ to network $v$ is
+ calculated by:
 
 $$
 \begin{aligned}
@@ -191,7 +198,7 @@ T_{uv} &= P(\Phi_{t+1} = v | \Phi_{t} = u) \\
 \end{aligned}
 $$
 
-The distance $s_{uv}$ is defined as 
+The distance $s_{uv}$ is defined as
 
 $$
 s_{uv} = || u - v ||_1 := \sum_i \sum_{i'} |u_{ii'} - v_{ii'}|
@@ -204,7 +211,7 @@ C_u = \sum_w (1- \lambda)^{s_{uw}} \cdot \lambda
 $$
 where $w$ is all possible networks given the S genes at hand.
 
-So the basic implementation idea would be: 
+So the basic implementation idea would be:
 
 1. Represent $u$, $v_1$ and $v_2$ using adjacency matrix
 2. Compute $s_{uv_1}$ and $s_{uv_2}$ by "diff"ing the pairs of matrices respectively
@@ -329,14 +336,19 @@ ggplot(data = df, aes(x = lambda, group = 1)) +
   ggtitle("Transition probability from u to v1 and v2\nas a Function of lambda")
 ```
 
-We can see that the transition probabilities of $v_1$ and $v_2$ converge when $\lambda$ is small and differ greatly when $\lambda$ is large. Dissimilar networks get penalized and result in lower transition probability as $\lambda$ increase. For similar networks like $v_1$, the probability to transit into them increases as we increase $\lambda$.
+We can see that the transition probabilities of $v_1$ and $v_2$ converge when
+ $\lambda$ is small and differ greatly when $\lambda$ is large. Dissimilar
+ networks get penalized and result in lower transition probability as $\lambda$
+ increase. For similar networks like $v_1$, the probability to transit into them
+ increases as we increase $\lambda$.
 
 
 # Problem 22: Mixture NEMs
 
 ## Subproblem 1
 
-Determine cellular perturbation map $\rho$ where $\rho_{ic} = 1$ if cell $c$ is perturbed by a knowdown of S-gene $i$. 
+Determine cellular perturbation map $\rho$ where $\rho_{ic} = 1$ if cell $c$
+ is perturbed by a knowdown of S-gene $i$.
 
 ```{r}
 S_genes <- c("S1", "S2")
@@ -355,7 +367,9 @@ rho
 
 ## Subproblem 2
 
-Assume $\{C_1, C_2\}$ are generated from $F_1$ and $\{C_3, C_4\}$ are generated from $F_2$, compute the *noiseless* log odds matrix $R$, where $R_{jc} > 0$ means that the perturbation on cell $c$ has an effect on E-gene $j$.
+Assume $\{C_1, C_2\}$ are generated from $F_1$ and $\{C_3, C_4\}$ are generated
+ from $F_2$, compute the *noiseless* log odds matrix $R$, where $R_{jc} > 0$
+ means that the perturbation on cell $c$ has an effect on E-gene $j$.
 
 ### (a) Compute expected effect pattern $(\rho^T\phi_k\theta_k)^T$
 
@@ -407,7 +421,8 @@ R
 
 ## Subproblem 3
 
-Calculate the responsibilities $\Gamma$ given mixture weights $\pi = (0.44, 0.56)$. Then update the mixture weights. (Well, EM again!)
+Calculate the responsibilities $\Gamma$ given mixture weights $\pi = (0.44, 0.56)$.
+ Then update the mixture weights. (Well, EM again!)
 
 ```{r}
 pi <- c(0.44, 0.56)

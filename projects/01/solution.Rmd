@@ -7,7 +7,7 @@ output: pdf_document
 ```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(c("graph", "Rgraphviz", "RBGL"), 
+BiocManager::install(c("graph", "Rgraphviz", "RBGL"),
                      update = FALSE)
 ```
 
@@ -15,7 +15,6 @@ BiocManager::install(c("graph", "Rgraphviz", "RBGL"),
 list.of.packages <- c("foreach", "doParallel", "doRNG")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
-
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -109,17 +108,17 @@ i.e., $P(A, B) = P(A)P(B)$. We have consequently proven that $A \perp B$.
 
 # Problem 2: Markov blanket
 
-The Markov blanket $MB(D)$ is $\{B, C, E, F, G\}$, where $B$ and $F$ are the 
-parents of $D$, $C$ and $G$ are the children of $D$, and $E$ is the co-parent 
+The Markov blanket $MB(D)$ is $\{B, C, E, F, G\}$, where $B$ and $F$ are the
+parents of $D$, $C$ and $G$ are the children of $D$, and $E$ is the co-parent
 of $D$.
 
-To prove that the conditional probability of $P(X_k|X_{n\neq k})$ is equivalent 
-to $P(X_k|MB(X_k))$, we can prove that $\forall X_{j}$ where 
+To prove that the conditional probability of $P(X_k|X_{n\neq k})$ is equivalent
+to $P(X_k|MB(X_k))$, we can prove that $\forall X_{j}$ where
 $j \in [1, n], j\neq k$, if $X_j \notin MB(X_k)$, then $X_j \perp X_k | MB(X_k)$.
 
-For this specific question, we need to prove that $A \perp D | MB(D)$. It is 
-obvious that $A \perp D | MB(D)$ because $A$ and $D$ are d-separated given 
-$MB(D)$ since $E \in MB(D)$ is on the (only) path from $A$ to $D$ and $E$ is in 
+For this specific question, we need to prove that $A \perp D | MB(D)$. It is
+obvious that $A \perp D | MB(D)$ because $A$ and $D$ are d-separated given
+$MB(D)$ since $E \in MB(D)$ is on the (only) path from $A$ to $D$ and $E$ is in
 a cascade structure $A \rightarrow E \rightarrow G$.
 
 # Problem 3
@@ -159,7 +158,7 @@ train_data <- df[picked, ]
 test_data  <- df[-picked,]
 ```
 
-Initialize the parameters using the function `BiDAG::scoreparameters` with the 
+Initialize the parameters using the function `BiDAG::scoreparameters` with the
 training data and the Bayesian Gaussian equivalent (BGe) score.
 
 ```{r}
@@ -183,7 +182,7 @@ g <- graph.adjacency(DAG, mode="directed")
 plot.igraph(g, edge.arrow.size=.5)
 ```
 
-Evaluate the log score of the test data against the estimated DAG using 
+Evaluate the log score of the test data against the estimated DAG using
 `BiDAG::scoreagainstDAG`.
 
 ```{r}
@@ -207,7 +206,7 @@ procedure <- function(am) {
     train_data <- df[picked, ]
     test_data  <- df[-picked,]
     train_scorepar <- BiDAG::scoreparameters(
-        scoretype="bge", 
+        scoretype="bge",
         train_data,
         bgepar=list(am=am, aw=NULL)
     )
@@ -258,7 +257,7 @@ colnames(res) <- c(1e-3, 1e-1, 1, 10, 1e2)
 print(res)
 ```
 
-It seems that as `am` increase, the average number of edges also increases. The 
+It seems that as `am` increase, the average number of edges also increases. The
 log score seems to have an optimum at `aw=1` for the parameters we tested.
 
 The final graph from the whole dataset is visualized in the following code block.

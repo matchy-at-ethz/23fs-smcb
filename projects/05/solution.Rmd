@@ -34,7 +34,8 @@ The stationary distribution $\pi$ satisfies:
 $$
 P(t)\pi = \pi
 $$
-after a sufficiently long time $t$ and any time point that follows. Hence, the following equation also holds:
+after a sufficiently long time $t$ and any time point that follows. Hence, the
+ following equation also holds:
 
 $$
 P(t + dt) \pi = \pi
@@ -93,12 +94,18 @@ P(Z_2|Z_3)P(Z_1|Z_3)P(X_4|Z_2) P(X_3|Z_2) P(X_2|Z_1) P(X_1|Z_1) \\
 \sum_{Z_1} P(Z_1|Z_3)P(X_2|Z_1) P(X_1|Z_1) & (\text{distributivity})\\
 &= \underbrace{\sum_{Z_4} \pi(Z_4) P(X_5|Z_4)}_4
 \underbrace{\sum_{Z_3} P(Z_3|Z_4)}_{4 \times 4}
-\underbrace{\sum_{Z_2} P(Z_2|Z_3) P(X_4|Z_2) P(X_3|Z_2)}_{4 \times 4 (Z_2 \rightarrow X_4 \text{ branch}) + 4 \times 4 (Z_2 \rightarrow X_3 \text{ branch})}
-\underbrace{\sum_{Z_1} P(Z_1|Z_3)P(X_2|Z_1) P(X_1|Z_1)}_{4 \times 4 (Z_1 \rightarrow X_2 \text{ branch}) + 4 \times 4 (Z_1 \rightarrow X_1 \text{ branch})} \\
+\underbrace{\sum_{Z_2} P(Z_2|Z_3) P(X_4|Z_2) P(X_3|Z_2)}_{
+  4 \times 4 (Z_2 \rightarrow X_4 \text{ branch})
+  + 4 \times 4 (Z_2 \rightarrow X_3 \text{ branch})
+}
+\underbrace{\sum_{Z_1} P(Z_1|Z_3)P(X_2|Z_1) P(X_1|Z_1)}_{
+  4 \times 4 (Z_1 \rightarrow X_2 \text{ branch})
+  + 4 \times 4 (Z_1 \rightarrow X_1 \text{ branch})
+} \\
 \end{aligned}
 $$
 
-In total we have $(16+16) \times 2 + 16 + 4 = 52$ summations. 
+In total we have $(16+16) \times 2 + 16 + 4 = 52$ summations.
 
 # Problem 14: Learning phylogenetic trees from sequence alignment data
 
@@ -134,15 +141,15 @@ tree_ML
 Find the optimal parameters of K80 model for rate matrix.
 
 ```{r}
-tree_optim_Q <- optim.pml(tree_ML, 
-                optQ = TRUE, 
-                optNni = FALSE, 
-                optBf = FALSE, 
-                optInv = FALSE, 
-                optGamma = FALSE, 
-                optEdge = FALSE, 
-                optRate = FALSE, 
-                optRooted = FALSE, 
+tree_optim_Q <- optim.pml(tree_ML,
+                optQ = TRUE,
+                optNni = FALSE,
+                optBf = FALSE,
+                optInv = FALSE,
+                optGamma = FALSE,
+                optEdge = FALSE,
+                optRate = FALSE,
+                optRooted = FALSE,
                 model = "K80")
 ```
 
@@ -150,15 +157,16 @@ tree_optim_Q <- optim.pml(tree_ML,
 tree_optim_Q
 ```
 
-Optimize for branch lengths, nucelotide substitution rates and tree topology simultaneously.
+Optimize for branch lengths, nucelotide substitution rates and tree topology
+ simultaneously.
 
 ```{r}
-tree_optim <- optim.pml(tree_ML, 
+tree_optim <- optim.pml(tree_ML,
                 optQ = TRUE,       # rate matrix
                 optNni = TRUE,     # tree topology
                 optBf = FALSE,     # base frequencies
                 optInv = FALSE,    # proportion of var size
-                optGamma = FALSE,  # gamma rate param 
+                optGamma = FALSE,  # gamma rate param
                 optEdge = TRUE,    # edge lengths
                 optRate = FALSE,   # overall rate
                 optRooted = FALSE, # edge lengths of a rooted tree
@@ -169,7 +177,8 @@ tree_optim <- optim.pml(tree_ML,
 tree_optim
 ```
 
-Bootstrap on optimised model. The program resampled the nucleotides in the alignment (columns in the input matrix).
+Bootstrap on optimised model. The program resampled the nucleotides in the
+ alignment (columns in the input matrix).
 
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
@@ -179,6 +188,6 @@ bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
 plotBS(tree_optim$tree, bootstrap_trees, type = "phylogram")
 ```
 
-`Mme_S` is more likely to affect patient `Mme_L`. The bootstrap support is 100% (in my run), suggesting `Mme_S` and `Mme_L` share a more recent ancestor (closer relationship) than `Mr D`
-
-
+`Mme_S` is more likely to affect patient `Mme_L`. The bootstrap support is 100%
+ (in my run), suggesting `Mme_S` and `Mme_L` share a more recent ancestor
+  (closer relationship) than `Mr D`

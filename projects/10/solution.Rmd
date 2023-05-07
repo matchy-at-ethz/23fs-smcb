@@ -23,7 +23,9 @@ library(doRNG)
 # Problem 28: Uniqueness of predictions from the lasso
 
 \begin{proof}
-To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$, it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove by contradiction.
+To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$,
+ it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove
+ by contradiction.
 
 Let the solution set be denoted as $S$, we have $\hat{\beta}_1, \hat{\beta}_2 \in S$.
 
@@ -33,7 +35,7 @@ So that we have:
 
 \begin{equation} \label{eq:1}
 \frac{1}{2}
-\left\lVert\ 
+\left\lVert\
   \mathbf{y} - \mathbf{X} \left(
     \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
   \right)
@@ -46,7 +48,8 @@ So that we have:
 c^*
 \end{equation}
 
-Define the loss function as $f: S \mapsto \lVert \mathbf{y} - \mathbf{X} \beta \rVert_2^2$. We know that the lineare loss function is stirctly convex, so that we have:
+Define the loss function as $f: S \mapsto \lVert \mathbf{y} - \mathbf{X} \beta \rVert_2^2$.
+ We know that the lineare loss function is stirctly convex, so that we have:
 
 \begin{equation} \label{eq:2}
 f\left(
@@ -67,7 +70,8 @@ Similarly, since $l_1$-nrom is convex, we have:
 + (1 - \alpha) \lVert \hat{\beta}_2 \rVert
 \end{equation}
 
-Combining Equation \ref{eq:2} and Equation \ref{eq:3}, we can start the following derivation:
+Combining Equation \ref{eq:2} and Equation \ref{eq:3}, we can start the
+ following derivation:
 
 $$
 \begin{aligned}
@@ -100,13 +104,16 @@ f\left(
 < c^*
 \end{equation}
 
-Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that our assumption $\hat{\beta}_1 \neq \hat{\beta}_2$ is wrong.
+Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that
+ our assumption $\hat{\beta}_1 \neq \hat{\beta}_2$ is wrong.
 
 \end{proof}
 
 # Problem 29: Ridge regression solution
 
-Given $n \times p$ matrix $\mathbf{X}$, response $n$-vector $\mathbf{y}$, and the parameter $p$-vector $\beta$, consider augmenting $\mathbf{X}$ with rows corresponding to $\sqrt{\lambda}$ times a $p \times p$ identity matrix $I$:
+Given $n \times p$ matrix $\mathbf{X}$, response $n$-vector $\mathbf{y}$, and
+ the parameter $p$-vector $\beta$, consider augmenting $\mathbf{X}$ with rows
+  corresponding to $\sqrt{\lambda}$ times a $p \times p$ identity matrix $I$:
 
 $$
 \mathbf{X}_* = \begin{pmatrix}
@@ -123,9 +130,9 @@ Now, the least square objective function on the modified dataset turns out to be
 \begin{aligned}
 &\phantom{=} (\mathbf{y}_* - \mathbf{X}_* \beta)^T
 (\mathbf{y}_* - \mathbf{X}_* \beta) \\
-&= 
-  \mathbf{y}_*^T \mathbf{y}_* 
-- 2\mathbf{y}_*^T\mathbf{X}_*\beta 
+&=
+  \mathbf{y}_*^T \mathbf{y}_*
+- 2\mathbf{y}_*^T\mathbf{X}_*\beta
 + \beta^T\mathbf{X}_*^T\mathbf{X}_*\beta
 \end{aligned}
 \end{equation}
@@ -134,12 +141,13 @@ Now, the least square objective function on the modified dataset turns out to be
 The solution to the linear regression on the modified dataset hence follows:
 
 \begin{equation} \label{eq:6}
-\hat{\beta} = 
+\hat{\beta} =
   (\mathbf{X}_*^T\mathbf{X}_*)^{-1}
   \mathbf{X}_*^T\mathbf{y}
 \end{equation}
 
-Since we are just padding $\mathbf{y}$ with zeros, the augmented part of $\mathbf{X}_*$ will not have any effect when it is multiplied by $\mathbf{y}_*^T$:
+Since we are just padding $\mathbf{y}$ with zeros, the augmented part of
+ $\mathbf{X}_*$ will not have any effect when it is multiplied by $\mathbf{y}_*^T$:
 
 \begin{equation} \label{eq:7}
 \mathbf{y}_*^T \mathbf{X}_* = \mathbf{y}^T\mathbf{X}
@@ -159,10 +167,11 @@ And finally with augmented dataset $\mathbf{X}_*$ we have:
 \end{aligned}
 \end{equation}
 
-Plug Equation \ref{eq:7} and Equation \ref{eq:8} back into Equation \ref{eq:6}, we delightfully sees that performing linear regression on the modified dataset gives:
+Plug Equation \ref{eq:7} and Equation \ref{eq:8} back into Equation \ref{eq:6},
+ we delightfully sees that performing linear regression on the modified dataset gives:
 
 \begin{equation}
-\hat{\beta} 
+\hat{\beta}
 = (\mathbf{X}^T \mathbf{X} + \lambda \mathbf{I})^{-1}
   \mathbf{X}^T \mathbf{y}
 \end{equation}
@@ -220,11 +229,11 @@ end - start
 stopImplicitCluster()
 ```
 ```{r}
-df <- do.call(rbind, 
-              lapply(1:length(alphas), 
+df <- do.call(rbind,
+              lapply(1:length(alphas),
                      function(x) {
-                      cbind.data.frame(alphas[x], 
-                                       res[[x]]$lambda, 
+                      cbind.data.frame(alphas[x],
+                                       res[[x]]$lambda,
                                        res[[x]]$cvm)
                      })
               )
@@ -257,7 +266,7 @@ plot(res.opt_alpha$glmnet.fit, "lambda", label=TRUE)
 ## Fit the final model and predict the response
 
 ```{r}
-model <- glmnet(X_train, y_train, 
+model <- glmnet(X_train, y_train,
                 alpha = param$alpha,
                 family = "binomial",
                 lambda = param$lambda)

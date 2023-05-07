@@ -65,11 +65,17 @@ $E(T) = 0 + 1 = \mathbf{1}$ & $e(T) = \frac{0+1}{5+1+4} = \mathbf{\frac{1}{10}}$
 
 # Problem 10: Estimating transition probabilities
 
-The path of each sequence (\textcolor[HTML]{1f77b4}{bat}, \textcolor[HTML]{ff7f0e}{rat}, \textcolor[HTML]{2ca02c}{cat}, \textcolor[HTML]{d62728}{gnat}, \textcolor[HTML]{9467bd}{goat}) from Begin to end is summarized below,
+The path of each sequence (\textcolor[HTML]{1f77b4}{bat},
+ \textcolor[HTML]{ff7f0e}{rat},
+ \textcolor[HTML]{2ca02c}{cat},
+ \textcolor[HTML]{d62728}{gnat},
+ \textcolor[HTML]{9467bd}{goat})
+ from Begin to end is summarized below,
 
 ![HMM.pdf](./HMM.pdf)
 
-Nodes that are not visited in any path have uniform probability of transitting to its next states:
+Nodes that are not visited in any path have uniform probability of transitting
+ to its next states:
 
 | Node | $t_i(k \rightarrow l)$ |
 | --- | --- |
@@ -78,7 +84,8 @@ Nodes that are not visited in any path have uniform probability of transitting t
 | $I_3$ | $\frac{1}{2}$ |
 | $D_3$ | $\frac{1}{2}$ |
 
-And the transition probabilities of nodes that are visited are listed in the following table
+And the transition probabilities of nodes that are visited are listed in the
+ following table
 
 ```{=latex}
 \pagebreak
@@ -255,7 +262,9 @@ plot(q, col=ifelse(q >= 0, "red", "blue"),
 legend("right", legend=c("ATPase", "GTPase"), col=c("red", "blue"), lty=1, cex=0.8)
 ```
 
-We can see a clear separation between points that are classified as ATPases and those classified as GTPases. The log ratio of ATPase vs GTPase is always way larger than 0 or way smaller than 0, indicating high likelihood.
+We can see a clear separation between points that are classified as ATPases and
+ those classified as GTPases. The log ratio of ATPase vs GTPase is always way
+ larger than 0 or way smaller than 0, indicating high likelihood.
 
 ```{r}
 # print the index of proteins that are classified as ATPases

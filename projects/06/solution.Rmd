@@ -11,7 +11,7 @@ output:
 I'm sorry that I didn't manage to finish the project on time :(
 but I do want to get feedback for my finished version.
 
-Please give points using my unfinished version -- or if you would be so kind, 
+Please give points using my unfinished version -- or if you would be so kind,
 give points using my finished version with late submission deduction for the
  parts I failed to finish on time.
 
@@ -21,7 +21,8 @@ give points using my finished version with late submission deduction for the
 
 \begin{proof}
 
-It's almost trivial that $\mathbb{E}[g(X)] = \mathbb{E}[g(X_i)]$ (because they are i.i.d from the same probability distribution as $X$).
+It's almost trivial that $\mathbb{E}[g(X)] = \mathbb{E}[g(X_i)]$ (because they
+ are i.i.d from the same probability distribution as $X$).
 
 $$
 \begin{aligned}
@@ -43,19 +44,21 @@ $$
 
 \begin{proof}
 
-By Bienayme's identity, we know that for pairwise independent variables, we have $Var\left(\sum_{i=1}^{n} X_i\right) = \sum_{i=1}^n Var(X_i)$. 
+By Bienayme's identity, we know that for pairwise independent variables, we have
+ $Var\left(\sum_{i=1}^{n} X_i\right) = \sum_{i=1}^n Var(X_i)$.
 
-And we also have $Var(g(X_i)) = Var(g(X))$ (by the same reason stated in the first subquestion, they are i.i.d with the same variance as $Var(g(X))$). 
+And we also have $Var(g(X_i)) = Var(g(X))$ (by the same reason stated in the
+ first subquestion, they are i.i.d with the same variance as $Var(g(X))$).
 
 The proof then follows:
 
 $$
 \begin{aligned}
-Var(\hat{g}(X)) 
+Var(\hat{g}(X))
 &= Var\left(\frac{1}{N}\sum_{i=1}^N g(X_i)\right) \\
 &= \frac{1}{N^2}Var\left(\sum_{i=1}^N g(X_i)\right) \\
-&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X_i)) \\ 
-&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X)) \\ 
+&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X_i)) \\
+&= \frac{1}{N^2} \sum_{i=1}^N Var(g(X)) \\
 &= \frac{N}{N^2} Var(g(X)) \\
 &= \frac{Var(g(X))}{N}
 \end{aligned}
@@ -71,7 +74,8 @@ $$
 
 All "$=T$"s are grayed out in the derivation for the ease of my brain to interpret.
 
-Recall that given a Bayesian network with nodes in set $X$, for a certain node $x$ we have $P(x|X_{\setminus x}) = P(x|MB(x))$.
+Recall that given a Bayesian network with nodes in set $X$, for a certain node
+ $x$ we have $P(x|X_{\setminus x}) = P(x|MB(x))$.
 
 From the structure of Markove Chain we can know that $S \perp R | C$
 
@@ -88,7 +92,9 @@ P(C_{\eqT} | R_\eqT,S_\eqT,W_\eqT)
 &= P(C_\eqT | R_\eqT, S_\eqT)
 & (\text{because }MB(C) = \{R, S\}) \\
 &= \frac{P(R_\eqT, S_\eqT | C_\eqT)P(C_\eqT)}{P(R_\eqT, S_\eqT)} \\
-&= \frac{P(R_\eqT | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{\sum_C P(R_\eqT | C) P(S_\eqT | C) P(C)}
+&= \frac{P(R_\eqT | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{
+  \sum_C P(R_\eqT | C) P(S_\eqT | C) P(C)
+}
 & (\text{because } S \perp R | C)
 \end{aligned}
 $$
@@ -108,7 +114,8 @@ P(R_\eqT|C_\eqT)P(S_\eqT|C_\eqT)P(C_\eqT)
 \end{aligned}
 $$
 
-Plug in the values, $P(C_\eqT|R_\eqT,S_\eqT,W_\eqT)$ is hence calculated (by the following code blocks) to be $\frac{4}{9}$
+Plug in the values, $P(C_\eqT|R_\eqT,S_\eqT,W_\eqT)$ is hence calculated (by
+ the following code blocks) to be $\frac{4}{9}$
 
 ```{r}
 P_C_T <- 0.5
@@ -118,7 +125,7 @@ P_R_T_given_C_F <- 0.2
 P_S_T_given_C_T <- 0.1
 P_S_T_given_C_F <- 0.5
 
-P_R_T_and_S_T <- P_R_T_given_C_T * P_S_T_given_C_T * P_C_T + 
+P_R_T_and_S_T <- P_R_T_given_C_T * P_S_T_given_C_T * P_C_T +
                  P_R_T_given_C_F * P_S_T_given_C_F * P_C_F
 ```
 
@@ -135,19 +142,23 @@ $$
 &&= P(C_\eqT | R_\eqF, S_\eqT)
 & (\text{because }MB(C) = \{R, S\}) \\
 &&&= \frac{P(R_\eqF, S_\eqT | C_\eqT)P(C_\eqT)}{P(R_\eqF, S_\eqT)} \\
-&&&= \frac{P(R_\eqF | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{\sum_C P(R_\eqF | C) P(S_\eqT | C) P(C)}
+&&&= \frac{P(R_\eqF | C_\eqT) P(S_\eqT | C_\eqT) P(C_\eqT)}{
+  \sum_C P(R_\eqF | C) P(S_\eqT | C) P(C)
+}
 & (\text{because } S \perp R | C)
 \end{aligned}
 $$
 
-We know that $S$ and $R$ are binary variables that only take `True` or `False`, i.e., $P(R_\eqT) + P(R_\eqF) = 1$ and $P(S_\eqT) + P(S_\eqF) = 1$.
+We know that $S$ and $R$ are binary variables that only take `True` or `False`,
+ i.e., $P(R_\eqT) + P(R_\eqF) = 1$ and $P(S_\eqT) + P(S_\eqF) = 1$.
 
-Plug in the values, $P(C_\eqT|R_\eqF,S_\eqT,W_\eqT)$ is hence calculated (by the following code blocks) to be $\frac{1}{21}$
+Plug in the values, $P(C_\eqT|R_\eqF,S_\eqT,W_\eqT)$ is hence calculated (by the
+ following code blocks) to be $\frac{1}{21}$
 
 ```{r}
 P_R_F_given_C_T <- 1 - P_R_T_given_C_T
 P_R_F_given_C_F <- 1 - P_R_F_given_C_T
-P_R_F_and_S_T <- P_R_F_given_C_T * P_S_T_given_C_T * P_C_T + 
+P_R_F_and_S_T <- P_R_F_given_C_T * P_S_T_given_C_T * P_C_T +
                  P_R_F_given_C_F * P_S_T_given_C_F * P_C_F
 ```
 
@@ -159,13 +170,13 @@ P_C_T_give_R_F_and_S_T
 
 ### 3. Derive $P(R_{\eqT}|C_\eqT, S_\eqT, W_\eqT)$
 
-In the following derivation the entities that are canceled out inside the 
+In the following derivation the entities that are canceled out inside the
 condition probability are either because $S \perp R | C$ or
 $P(W|X_{\setminus{W}}) = P(W|MB(W))$.
 
 $$
 \begin{aligned}
-P (R_\eqT | C_\eqT, S_\eqT, W_\eqT) 
+P (R_\eqT | C_\eqT, S_\eqT, W_\eqT)
 &= \frac{P(R_\eqT, C_\eqT, S_\eqT, W_\eqT)}{P(C_\eqT, S_\eqT, W_\eqT)} \\
 &= \frac{
   P(W_\eqT | R_\eqT, C_\eqT, S_\eqT)
@@ -205,8 +216,8 @@ $$
 \begin{aligned}
 &P(W_\eqT | R_\eqT, S_\eqT) &&= 0.99 \\
 &P(R_\eqT | C_\eqT)         &&= 0.8  \\
-&\sum_R P(W_\eqT| R, S_\eqT) P(R| C_\eqT) 
- &&= P(W_\eqT| R_\eqT, S_\eqT) P(R_\eqT| C_\eqT) + 
+&\sum_R P(W_\eqT| R, S_\eqT) P(R| C_\eqT)
+ &&= P(W_\eqT| R_\eqT, S_\eqT) P(R_\eqT| C_\eqT) +
      P(W_\eqT| R_\eqF, S_\eqT) P(R_\eqF| C_\eqT) \\
 &&&= 0.99 \cdot 0.8 + 0.9 \cdot (1 - 0.8) \\
 &&&= 0.972
@@ -222,7 +233,7 @@ P_W_T_given_R_F_and_S_F <- 0.1
 ```
 
 ```{r}
-P_W_T_given_S_T_and_C_T <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T + 
+P_W_T_given_S_T_and_C_T <- P_W_T_given_R_T_and_S_T * P_R_T_given_C_T +
                            P_W_T_given_R_F_and_S_T * P_R_F_given_C_T
 ```
 
@@ -252,7 +263,7 @@ $$
 
 ```{r}
 P_R_T_given_C_F_and_S_T_and_W_T <- (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F) /
-                                  (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F + 
+                                  (P_W_T_given_R_T_and_S_T * P_R_T_given_C_F +
                                    P_W_T_given_R_F_and_S_T * P_R_F_given_C_F)
 P_R_T_given_C_F_and_S_T_and_W_T
 ```
@@ -387,10 +398,10 @@ Plot the lines
 
 ```{r}
 x=1:50000
-plot(x, rel_freq_C_run1, col = "red", 
+plot(x, rel_freq_C_run1, col = "red",
      type="l",
-     xlab = "Iteration #", 
-     ylab = "Relative Frequency", 
+     xlab = "Iteration #",
+     ylab = "Relative Frequency",
 )
 lines(x, rel_freq_C_run2, col = "blue")
 
@@ -401,17 +412,17 @@ lines(x, rel_freq_R_run1, col = "green")
 lines(x, rel_freq_R_run2, col = "orange")
 
 # Add a legend to the plot
-legend("topright", 
-       legend = c("C_run1", "C_run2", "R_run1", "R_run2"), 
-       col = c("red", "blue", "green", "orange"), 
+legend("topright",
+       legend = c("C_run1", "C_run2", "R_run1", "R_run2"),
+       col = c("red", "blue", "green", "orange"),
        lty = 1)
 
 # Add vertical lines at x = 7000 and x = 15000
 abline(v = c(7000, 15000), lty = 2, col = "black")
 ```
 
-It seems that the relative frequencies start to plateau at around 7000 iterations. 
-Hence it's sufficient to do about 7000 iterations. 
+It seems that the relative frequencies start to plateau at around 7000 iterations.
+Hence it's sufficient to do about 7000 iterations.
 
 (And if you really want to be confident, maybe 15,000 iterations)
 
@@ -425,7 +436,7 @@ gelman.plot(mcmcs)
 ```
 
 It's clear that after about 7000 iterations there are almost no fluctuations in the
-shrink factors and they go very close to 1.0. It would be safe to set a brun-in 
+shrink factors and they go very close to 1.0. It would be safe to set a brun-in
 time of about 7000, or to be safer, 10000.
 
 ## (h) Re-estimate $P(R=T|S=T,W=T)$ based on samples obtained after the burn-in time.
@@ -470,7 +481,7 @@ The numerator part:
 
 $$
 \begin{aligned}
-\sum_C P(R_\eqT, S_\eqT, W_\eqT, C) 
+\sum_C P(R_\eqT, S_\eqT, W_\eqT, C)
 &= \sum_C P(R_\eqT, S_\eqT, W_\eqT | C)P(C) \\
 &= \sum_C P(W_\eqT | R_\eqT, S_\eqT, \cancel{C})P(R_\eqT, S_\eqT|C)P(C) \\
 &= \sum_C P(W_\eqT | R_\eqT, S_\eqT)P(R_\eqT|C)P(S_\eqT|C)P(C) \\
@@ -489,7 +500,7 @@ The denominator:
 
 $$
 \begin{aligned}
-\sum_C P(S_\eqT, W_\eqT, C) 
+\sum_C P(S_\eqT, W_\eqT, C)
 &= \sum_C \sum_R P(W_\eqT, S_\eqT, R, C) \\
 &= \sum_C \sum_R P(W_\eqT | R, S_\eqT, \cancel{C})P(R, S_\eqT, C) \\
 &= \sum_C \sum_R P(W_\eqT | R, S_\eqT) P(R|C) P(S_\eqT| C)P(C) \\
@@ -532,7 +543,7 @@ P_R_T_given_S_T_and_W_T_analytic
 probs <- data.frame(
   Probability = c("Estimation in (c)", "Re-estimation in (h)", "Analytic solution"),
   Value = c(P_R_T_given_S_T_and_W_T,
-            P_R_T_given_S_T_and_W_T_reestimated, 
+            P_R_T_given_S_T_and_W_T_reestimated,
             P_R_T_given_S_T_and_W_T_analytic)
 )
 
@@ -541,4 +552,5 @@ knitr::kable(probs, align = "l", caption = "Probabilities", row.names = FALSE)
 ```
 
 The value obtained in (h) seems to be very close to the analytical solution.
-The value obtained in (c) is more different from the analytical solution but is expected since we only sampled 100 times.
+The value obtained in (c) is more different from the analytical solution but is
+ expected since we only sampled 100 times.
