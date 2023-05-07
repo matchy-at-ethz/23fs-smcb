@@ -7,7 +7,7 @@ monofont: "Fira Code Regular Nerd Font Complete"
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
+    extra_dependencies:  [ "amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
 ```{r, include=FALSE}
@@ -23,6 +23,7 @@ library(doRNG)
 # Problem 28: Uniqueness of predictions from the lasso
 
 \begin{proof}
+
 To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$,
  it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove
  by contradiction.
@@ -39,17 +40,14 @@ So that we have:
   \mathbf{y} - \mathbf{X} \left(
     \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
   \right)
-\right\rVert
-+
+\right\rVert_2^2 +
 \lambda \left\lVert
 \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
-\right\rVert
-=
-c^*
+\right\rVert_1 = c^*
 \end{equation}
 
 Define the loss function as $f: S \mapsto \lVert \mathbf{y} - \mathbf{X} \beta \rVert_2^2$.
- We know that the lineare loss function is stirctly convex, so that we have:
+ We know that the linear loss function is strictly convex, so that we have:
 
 \begin{equation} \label{eq:2}
 f\left(
@@ -66,32 +64,33 @@ Similarly, since $l_1$-nrom is convex, we have:
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right\rVert_1
 \leq
-\alpha\lVert \hat{\beta}_1 \rVert
-+ (1 - \alpha) \lVert \hat{\beta}_2 \rVert
+\alpha\lVert \hat{\beta}_1 \rVert_1
++ (1 - \alpha) \lVert \hat{\beta}_2 \rVert_1
 \end{equation}
 
 Combining Equation \ref{eq:2} and Equation \ref{eq:3}, we can start the
  following derivation:
 
-$$
-\begin{aligned}
+\begin{equation}
+\begin{split}
 &\phantom{= }\frac{1}{2}
 f\left(
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right) + \lambda \left\lVert
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
-\right\rVert \\
+\right\rVert_1 \\
 &<
 \alpha\left(
-  f(\hat{\beta}_1) + \lambda \lVert\hat{\beta}_1\rVert
+  f(\hat{\beta}_1) + \lambda \lVert\hat{\beta}_1\rVert_1
 \right) +
 (1 - \alpha) \left(
-  f(\hat{\beta}_2) + \lambda \lVert\hat{\beta}_2\rVert)
+  f(\hat{\beta}_2) + \lambda \lVert\hat{\beta}_2\rVert_1)
 \right) \\
 &= \alpha c^* + (1-\alpha) c^* \\
 &= c^*
-\end{aligned}
-$$
+\end{split}
+\end{equation}
+
 Just a re-write:
 
 \begin{equation} \label{eq:4}
@@ -100,7 +99,7 @@ f\left(
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right) + \lambda \left\lVert
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
-\right\rVert
+\right\rVert_1
 < c^*
 \end{equation}
 
@@ -109,11 +108,13 @@ Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that
 
 \end{proof}
 
+\pagebreak
+
 # Problem 29: Ridge regression solution
 
 Given $n \times p$ matrix $\mathbf{X}$, response $n$-vector $\mathbf{y}$, and
  the parameter $p$-vector $\beta$, consider augmenting $\mathbf{X}$ with rows
-  corresponding to $\sqrt{\lambda}$ times a $p \times p$ identity matrix $I$:
+ corresponding to $\sqrt{\lambda}$ times a $p \times p$ identity matrix $I$:
 
 $$
 \mathbf{X}_* = \begin{pmatrix}
@@ -127,16 +128,15 @@ and $\mathbf{y}$ is similarly augmented with $p$ zeros at its end into $\mathbf{
 Now, the least square objective function on the modified dataset turns out to be:
 
 \begin{equation} \label{eq:5}
-\begin{aligned}
+\begin{split}
 &\phantom{=} (\mathbf{y}_* - \mathbf{X}_* \beta)^T
 (\mathbf{y}_* - \mathbf{X}_* \beta) \\
 &=
   \mathbf{y}_*^T \mathbf{y}_*
 - 2\mathbf{y}_*^T\mathbf{X}_*\beta
 + \beta^T\mathbf{X}_*^T\mathbf{X}_*\beta
-\end{aligned}
+\end{split}
 \end{equation}
-
 
 The solution to the linear regression on the modified dataset hence follows:
 
