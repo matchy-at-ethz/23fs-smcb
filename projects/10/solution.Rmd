@@ -14,6 +14,10 @@ output:
 library(caret)
 library(glmnet)
 library(pROC)
+library(foreach)
+library(doParallel)
+library(dplyr)
+library(doRNG)
 ```
 
 # Problem 28: Uniqueness of predictions from the lasso
@@ -29,7 +33,7 @@ So that we have:
 
 \begin{equation} \label{eq:1}
 \frac{1}{2}
-\left\lVert
+\left\lVert\ 
   \mathbf{y} - \mathbf{X} \left(
     \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
   \right)
@@ -169,4 +173,117 @@ which is just the ridge regression solution.
 
 # Problem 30: Variable selection under various norms
 
-TODO
+## Load data and split into training and test set
+
+```{r}
+# load data
+set.seed(42)
+load("yeastStorey.rda")
+```
+
+```{r}
+sample <- createDataPartition(data$Marker, p = 0.7, list = FALSE)
+
+train <- data[sample, ]
+test  <- data[-sample, ]
+```
+
+```{r}
+X_train <- as.matrix(train[, -1])
+y_train <- train[,  1]
+
+X_test  <- as.matrix(test[, -1])
+y_test  <- test[,  1]
+```
+
+
+## Do 10-fold cross validation
+
+```{r}
+alphas <- seq(0, 1, 0.1)
+```
+
+```{r}
+foldid <- sample(1:10, size = length(sample), replace = TRUE)
+
+num_cores <- detectCores()
+registerDoParallel(num_cores)
+start <- Sys.time()
+res <- foreach (alpha = alphas, .combine = c, .options.RNG = 42) %dorng% {
+  cv_res <- cv.glmnet(X_train, y_train, alpha = alpha,
+                      family = "binomial", foldid = foldid,
+                      type.measure = "mse")
+  list(cv_res)
+}
+end <- Sys.time()
+end - start
+stopImplicitCluster()
+```
+```{r}
+df <- do.call(rbind, 
+              lapply(1:length(alphas), 
+                     function(x) {
+                      cbind.data.frame(alphas[x], 
+                                       res[[x]]$lambda, 
+                                       res[[x]]$cvm)
+                     })
+              )
+colnames(df) <- c("alpha", "lambda", "cvm")
+```
+
+```{r}
+param <- filter(df, cvm == min(cvm))
+param
+```
+
+For the optimal $\alpha$ (here $\alpha = 1$)...
+
+```{r}
+opt_idx <- which(alphas == param$alpha)
+res.opt_alpha <- res[[opt_idx]]
+```
+
+Plot the mean cross-validated error as a function of $\log \lambda$.
+
+```{r}
+plot(res.opt_alpha)
+```
+Plot the trace curve of coefficients as a function of $\log \lambda$.
+
+```{r}
+plot(res.opt_alpha$glmnet.fit, "lambda", label=TRUE)
+```
+
+## Fit the final model and predict the response
+
+```{r}
+model <- glmnet(X_train, y_train, 
+                alpha = param$alpha,
+                family = "binomial",
+                lambda = param$lambda)
+```
+
+```{r}
+prob <- predict(model, newx = X_test, type = "response")
+y_pred <- ifelse(prob > 0.5, 1, 0)
+```
+
+Report the varaibles selected.
+
+```{r}
+selected <- coef(res.opt_alpha, param$lambda)
+selected@Dimnames[[1]][selected@i]
+```
+
+Plot ROC...
+
+```{r}
+test_roc <- roc(y_test, as.vector(y_pred))
+plot(test_roc)
+```
+
+... and report the corresponding AUC.
+
+```{r}
+test_roc$auc
+```
