@@ -1,0 +1,195 @@
+---
+title: "Project 11 NMF and multi-omics data integration"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+author: "Team K - Minghang Li"
+mainfont: "KpRoman"
+monofont: "Fira Code Regular Nerd Font Complete"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
+---
+
+```{r, include=FALSE}
+library(NMF)
+library(foreach)
+library(doParallel)
+```
+
+# Problem 31: Uniqueness of NMF solutions
+
+The solution is not necessarily unique. The easiest way is to give couter example.
+
+Suppose we have:
+
+$$
+V = \begin{bmatrix}
+  5 & 10
+\end{bmatrix}
+$$
+
+Then it is possible to decompose it into given $k = 1$:
+
+$$
+H = \begin{bmatrix}
+  1 & 2
+\end{bmatrix}, \quad
+W = \begin{bmatrix}
+  5
+\end{bmatrix}
+$$
+
+However, suppose we have $\tilde{W} = \begin{bmatrix} 2 \end{bmatrix}$, we can also find $\tilde{H}$ such that:
+
+$$
+\tilde {H} = \tilde{W}^{-1} W H = \begin{bmatrix}
+  5/2 & 5
+\end{bmatrix}
+$$
+
+So that $WH = \tilde{W}\tilde{H}$ but $W \neq \tilde{W}$ and $H \neq \tilde{H}$. In general if we have square $\tilde{W}$ and it is inversible the solution is not unique.
+
+(Of course I'm not satisfied with this proof because it only proves the non-uniqueness when $K = M$. I'm not sure how to tackle this problem in a more general scenario though...)
+
+# Problem 32: NMF of spatial gene expression patterns
+
+## Subproblem 1
+
+```{r}
+# load DrosophilaExpressions.rda
+load("DrosophilaExpressions.rda")
+```
+
+Display the first 16 observations as elliptical images.
+
+```{r}
+imageBatchDisplay(V[, 1:16])
+```
+
+### Factorization using `rank = 15`
+
+Compute a factorization $V \approx \hat{V} = WH$ with `rank=15, seed=123` and default `method="brunet"`.
+
+```{r}
+res <- nmf(V, rank = 15, method = "brunet", seed = 123)
+```
+
+Report the KL divergence of the approximated data matrix $\hat{V}$.
+
+```{r}
+summary(res)
+```
+
+Display the first 16 columns of $\hat{V}$ as imagese.
+
+```{r}
+V.hat <- fitted(res)
+imageBatchDisplay(V.hat[, 1:16])
+```
+
+Display all computed basis patterns (columns of W).
+
+```{r, out.width="80%"}
+# use basismap (from the documentation)
+basismap(res, subsetRow=TRUE)
+```
+
+### Factorization using `rank = 10`
+
+```{r}
+res.10 <- nmf(V, rank = 10, method = "brunet", seed = 123)
+# report KL divergence (note the "residuals")
+summary(res.10)
+```
+
+```{r}
+# visualize V hat
+V.hat.10 <- fitted(res)
+imageBatchDisplay(V.hat.10[, 1:16])
+```
+
+```{r, out.width="80%"}
+# display W
+basismap(res.10, subsetRow=TRUE)
+```
+
+## Subproblem 2
+
+
+```{r}
+W.10 <- basis(res.10)
+H.10 <- coef(res.10)
+```
+
+### Gene `Mkp3`
+
+```{r}
+imageBatchDisplay(
+  W.10,
+  imgNames = H.10[, "Mkp3"],
+  font = 1
+)
+```
+
+### Gene `CG31909`
+
+```{r}
+imageBatchDisplay(
+  W.10,
+  imgNames = H.10[, "CG31909"],
+  font = 1
+)
+```
+
+# Problem 33: Implementing NMF from scratch
+
+```{r}
+NMF <- function(V, k, 
+                W = NULL, H = NULL, max_iter = 10000,
+                seed = 42) {
+  set.seed(seed)
+  M <- dim(V)[[1]]
+  N <- dim(V)[[2]]
+  if (is.null(W)) {
+    W <- matrix(runif(M * k), nrow = M, ncol = k)
+  }
+  
+  if (is.null(H)) {
+    H <- matrix(runif(k * N), nrow = k, ncol = N)
+  }
+  
+  W_new <- W
+  H_new <- H
+  to_log <- V /(W %*% H)
+  to_log <- ifelse(to_log != 0, log(to_log), 0)
+  kl_div <- sum(V * to_log - V + W %*% H)
+  prev_kl_div <- kl_div
+  all_kl <- foreach (iter=1:max_iter, .combine = c) %do% {
+    H_new <- H * (t(W) %*% (V/(W %*% H))) / (colSums(W))
+    W_new <- W * ((V/(W %*% H_new)) %*% t(H_new)) / (rowSums(H_new))
+    
+    to_log <- V /(W_new %*% H_new)
+    to_log <- ifelse(to_log != 0, log(to_log), 0)
+    kl_div <- sum(V * to_log - V + W_new %*% H_new)
+
+    prev_kl_div <- kl_div
+    W <- W_new
+    H <- H_new
+    kl_div
+  }
+  
+  return(list(V.hat=W_new %*% H_new, W=W_new, H=H_new, KLdiv=kl_div, allKL=all_kl))
+}
+```
+
+```{r}
+res <- NMF(V, 10, max_iter=1000)
+```
+
+```{r}
+res$KLdiv
+```
+
+```{r}
+imageBatchDisplay(res$V.hat[, 1:16])
+```
