@@ -1,23 +1,28 @@
 ---
-title: "SMCB Project 1"
-date: "February 24, 2023"
-output: pdf_document
+title: "Project 1 Bayesian Networks and Gene Regulation"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
+mainfont: "KpRoman"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies:  [ "amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+```{r install_from_BiocManager, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install(c("graph", "Rgraphviz", "RBGL"),
                      update = FALSE)
 ```
 
-```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+```{r install_packages, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 list.of.packages <- c("foreach", "doParallel", "doRNG")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r load_packages, echo=FALSE, message=FALSE, warning=FALSE}
 library(foreach)
 library(doParallel)
 library(doRNG)
@@ -26,6 +31,7 @@ library(BiDAG)
 library(igraph)
 library(graph)
 ```
+
 
 # Problem 1: Conditional independence and BNs
 
@@ -121,15 +127,31 @@ obvious that $A \perp D | MB(D)$ because $A$ and $D$ are d-separated given
 $MB(D)$ since $E \in MB(D)$ is on the (only) path from $A$ to $D$ and $E$ is in
 a cascade structure $A \rightarrow E \rightarrow G$.
 
-# Problem 3
+Alternatively it can also be proved by maticulously simplifying the total probability (since d-seperation is not introduced yet):
+
+$$
+\begin{aligned}
+P(D|A,B,C,E,F,G) &= \frac{P(A,B,C,D,E,F,G)}{P(A,B,C,E,F,G)} \\
+&= \frac{
+  \cancel{P(A)}\cancel{P(B)}\cancel{P(F)}P(D|B,F)\cancel{P(E|A)}P(G|D,E)P(C|D)
+}{
+  \sum_{D}\cancel{P(A)}\cancel{P(B)}\cancel{P(F)}P(D|B,F)\cancel{P(E|A)}P(G|D,E)P(C|D)
+} \\
+&= \frac{P(D|B,F)P(G|D,E)P(C|D)}{\sum_{D}P(D|B,F)P(G|D,E)P(C|D)}
+\end{aligned}
+$$
+
+It's clear that the total probability depends only on $MB(D)$. Hence we have $P(D|A,B,C,E,F,G) = P(D|MB(D))$
+
+# Problem 3: Learning Bayesian networks from protein data
 
 ## Package and Dataset Preparation
 
-```{r}
-set.seed(2023)
+```{r set_random_seed, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+set.seed(42)
 ```
 
-```{r}
+```{r get_data}
 # download dataset
 df <- read.csv(file="https://raw.githubusercontent.com/felixleopoldo/benchpress/master/resources/data/mydatasets/2005_sachs_2_cd3cd28icam2_log_std.csv")
 head(df)
@@ -139,19 +161,19 @@ head(df)
 
 Number of variables ($n$): $11$ Number of observations ($N$): $902$
 
-```{r}
+```{r show_df_dim}
 dim(df)
 ```
 
 Visualization of the transformed data using `ggpairs` function.
 
-```{r results='hide', fig.keep='all', message=FALSE}
-ggpairs(df)
+```{r visualize_data, results='hide', fig.keep='all', message=FALSE}
+ggpairs(df, diag = list(continuous = "barDiag"))
 ```
 
 Randomly split the data into 80% traning data and 20% test data.
 
-```{r}
+```{r split_train_test_data}
 train_data_size <- floor(0.8*nrow(df))
 picked <- sample(seq_len(nrow(df)), size=train_data_size)
 train_data <- df[picked, ]
@@ -161,67 +183,57 @@ test_data  <- df[-picked,]
 Initialize the parameters using the function `BiDAG::scoreparameters` with the
 training data and the Bayesian Gaussian equivalent (BGe) score.
 
-```{r}
+```{r get_score}
 train_scorepar <- BiDAG::scoreparameters(scoretype="bge", train_data)
-test_scorepar <- BiDAG::scoreparameters(scoretype="bge", test_data)
 ```
 
 ## (b)
 
 Learn a Bayesian network using the `BiDAG::iterativeMCMC` function.
 
-```{r}
+```{r iterativeMCMC}
 BN <- iterativeMCMC(scorepar=train_scorepar, verbose=FALSE)
+```
+
+```{r summary_BN}
+summary(BN)
 ```
 
 Plot the DAG.
 
-```{r}
-DAG <- getDAG(BN, amat=TRUE)
-g <- graph.adjacency(DAG, mode="directed")
-plot.igraph(g, edge.arrow.size=.5)
+```{r plot_DAG}
+par(mfrow=c(1, 1))
+plot(graphAM(as.matrix(BN$DAG), edgemode = "directed"))
 ```
 
 Evaluate the log score of the test data against the estimated DAG using
 `BiDAG::scoreagainstDAG`.
 
-```{r}
-log_score <- scoreagainstDAG(scorepar=test_scorepar, incidence=DAG)
-mean(log_score)
+```{r get_logscore}
+sum(scoreagainstDAG(scorepar = train_scorepar, BN$DAG, test_data))
 ```
 
 ## (c)
 
-The following code blocks run 100 iterations for each experiments.
+The following code blocks run 10 iterations for each experiments.
 
-```{r}
-res <- data.frame(matrix(ncol=5, nrow=2))
+```{r create_result_df}
+res <- data.frame(matrix(vector(mode = 'numeric',length = 10), ncol=5, nrow=2))
 colnames(res) <- c(1, 2, 3, 4, 5)
 rownames(res) <- c("ecount", "logscore")
 ```
 
-```{r}
-procedure <- function(am) {
-    picked <- sample(seq_len(nrow(df)), size=train_data_size)
-    train_data <- df[picked, ]
-    test_data  <- df[-picked,]
-    train_scorepar <- BiDAG::scoreparameters(
-        scoretype="bge",
-        train_data,
-        bgepar=list(am=am, aw=NULL)
-    )
-    BN <- BiDAG::iterativeMCMC(scorepar=train_scorepar)
-    return(BN)
-}
+```{r define_am_list}
+am_list <- 10^(c(-5, -3, -1, 1, 2))
 ```
 
-```{r results='hide'}
+```{r run_am_procedure, results='hide'}
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 index <- 1
-foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
-    set.seed(2023)
-    v <- foreach (i=1:100, .combine=rbind) %dorng% {
+foreach (am=am_list) %do% {
+    # by default doRNG uses "L’Ecuyer-CMRG" so should be fine
+    v <- foreach (i=1:10, .combine=rbind) %dorng% {
         picked <- sample(seq_len(nrow(df)), size=train_data_size)
         train_data <- df[picked, ]
         test_data  <- df[-picked,]
@@ -229,20 +241,10 @@ foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
             scoretype="bge", train_data,
             bgepar=list(am=am, aw=NULL)
         )
-        test_scorepar <- BiDAG::scoreparameters(
-            scoretype="bge", test_data,
-            bgepar=list(am=am, aw=NULL)
-        )
         BN <- BiDAG::iterativeMCMC(scorepar=train_scorepar)
-        DAG <- BiDAG::getDAG(BN)
-        g <- igraph::graph.adjacency(DAG, mode="directed")
-        ecount <- igraph::ecount(g)
-        log_score <- BiDAG::scoreagainstDAG(
-            scorepar=test_scorepar,
-            incidence=DAG
-        )
-        avg_log_score <- mean(log_score)
-        return(c(ecount=ecount, log_score=avg_log_score))
+        ecount <- sum(BN$DAG)
+        log_score <- sum(BiDAG::scoreagainstDAG(train_scorepar, BN$DAG, test_data))
+        return(c(ecount=ecount, log_score=log_score))
     }
     avg <- colMeans(v)
     res[1, index] <- avg[1]
@@ -252,20 +254,20 @@ foreach (am=c(1e-3, 1e-1, 1e0, 1e1, 1e2)) %do% {
 stopImplicitCluster()
 ```
 
-```{r}
-colnames(res) <- c(1e-3, 1e-1, 1, 10, 1e2)
+```{r print_results_dataframe}
+colnames(res) <- am_list
 print(res)
 ```
 
-It seems that as `am` increase, the average number of edges also increases. The
-log score seems to have an optimum at `aw=1` for the parameters we tested.
+It seems that as `am` increase, the average number of edges also increases. 
+
+The log score seems to have an optimum at `am=1` for the parameters we tested.
 
 The final graph from the whole dataset is visualized in the following code block.
 
-```{r}
+```{r plot_BN_from_whole_dataset}
 scorepar <- BiDAG::scoreparameters(scoretype="bge", df, bgepar=list(am=1, aw=NULL))
 BN <- BiDAG::iterativeMCMC(scorepar=scorepar, verbose=FALSE)
-DAG <- BiDAG::getDAG(BN, amat=TRUE)
-g <- graph.adjacency(DAG, mode="directed")
-plot.igraph(g, edge.arrow.size=.5)
+par(mfrow=c(1,1))
+plot(graphAM(as.matrix(BN$DAG), edgemode = "directed"))
 ```
