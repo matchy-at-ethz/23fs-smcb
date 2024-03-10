@@ -1,25 +1,28 @@
 ---
-title: "Project 2 EM Algorithm"
-date: "March 24, 2023"
-author: Team K
-output: pdf_document
+title: "Project 3 Markove chains and hidden Markov models"
+date:  "`r format(Sys.time(), '%B %d, %Y')`"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
+mainfont: "KpRoman"
+editor_options: 
+  chunk_output_type: console
+output:
+  pdf_document:
+    latex_engine: xelatex
+    extra_dependencies:  [ "amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r, include=FALSE}
+```{r load_source_code, include=FALSE}
 source("code/viterbi.r", local = knitr::knit_global())
 # or sys.source("your-script.R", envir = knitr::knit_global())
 ```
 
-```{r, include=FALSE}
+```{r load_library, include=FALSE}
+library(parallel)
 library(tidyverse)
 library(foreach)
 library(doParallel)
-library(unix)
 ```
 
-```{r, include=FALSE}
-rlimit_as(1e12, 1e12)
-```
 
 # Problem 6: Hidden Markov Models
 
@@ -58,28 +61,29 @@ $$
 &= \begin{bmatrix}
   \pi_1& \pi_2
 \end{bmatrix}\begin{bmatrix}
-  0.2 & 0.8 \\
-  0.6 & 0.4
+  0.3 & 0.7 \\
+  0.2 & 0.8
 \end{bmatrix} \\
 &= \begin{bmatrix}
-  0.2\pi_1 + 0.6 \pi_2 &
-  0.8\pi_1 + 0.4 \pi_2
+  0.3\pi_1 + 0.2 \pi_2 &
+  0.7\pi_1 + 0.8 \pi_2
 \end{bmatrix}
 \end{aligned}
 $$
 
 Given that $\pi_1 = 1 - \pi_2$e can solve the equations:
 
+
 $$
 \left\{\begin{aligned}
-  &\pi_1 = 0.2\pi_1 + 0.6\pi_2\\
-  &\pi_2 = 0.8\pi_1 + 0.4\pi_2\\
+  &\pi_1 = 0.3\pi_1 + 0.2\pi_2\\
+  &\pi_2 = 0.7\pi_1 + 0.8\pi_2\\
   &\pi_1 = 1 - \pi_2
 \end{aligned}\right.
 \Rightarrow
 \left\{\begin{aligned}
-  &\pi_1 = \frac{3}{7}\\
-  &\pi_2 = \frac{4}{7}
+  &\pi_1 = \frac{2}{9}\\
+  &\pi_2 = \frac{7}{9}
 \end{aligned}\right.
 $$
 
@@ -92,9 +96,9 @@ eigenvector of eigenvalue $\lambda = 1$.
 Note that the eigenvector should be normalized to satisfy the constraint that
 $\pi_1 + \pi_2 = 1$.
 
-```{r}
+```{r eigen_val_method}
 # initialize the transition matrix
-Tr <- matrix(c(0.2, 0.8, 0.6, 0.4), 2, 2, byrow=TRUE)
+Tr <- matrix(c(0.3, 0.7, 0.2, 0.8), 2, 2, byrow=TRUE)
 
 # solve for the eigenvalues and eigenvectors for transpose of T
 eigens <- eigen(t(Tr))
@@ -108,10 +112,10 @@ pi <- ev / sum(ev)
 pi
 ```
 
-```{r}
+```{r sanity_check}
 # check that the two computation confirms
-near(pi[1], 3/7)
-near(pi[2], 4/7)
+near(pi[1], 2/9)
+near(pi[2], 7/9)
 ```
 
 # Problem 7: Predictinig protein secondary structure using HMMs
@@ -121,13 +125,13 @@ near(pi[2], 4/7)
 > Read `proteins train.tsv`, `proteins test.tsv` and `proteins new.tsv` into the
 > memory and store each in a `data.frame`
 
-```{r}
+```{r load_data}
 train <- read.csv("data/proteins_train.tsv", sep = "\t", header = FALSE)
 test  <- read.csv("data/proteins_test.tsv",  sep = "\t", header = FALSE)
 new   <- read.csv("data/proteins_new.tsv",   sep = "\t", header = FALSE)
 ```
 
-```{r}
+```{r name_columns}
 header <- c("identifier",
              "sequence",
              "structure")
@@ -136,7 +140,7 @@ colnames(test)  <- header
 colnames(new)   <- header[1:2]
 ```
 
-```{r}
+```{r peek_train_data}
 head(train)
 ```
 
@@ -148,7 +152,7 @@ head(train)
 
 First get all the possible amino acid and secondary structure states.
 
-```{r}
+```{r get_aa_states}
 # get all the possible amino acid states
 aa_states <- train$sequence %>%
   strsplit("") %>%
@@ -158,7 +162,7 @@ aa_states <- train$sequence %>%
 aa_states
 ```
 
-```{r}
+```{r get_structure_states}
 # get all the possible secondary structure states, and sort them
 ss_states <- train$structure %>%
   strsplit("") %>%
@@ -168,7 +172,7 @@ ss_states <- train$structure %>%
 ss_states
 ```
 
-```{r}
+```{r def_MLE_function}
 MLE <- function(data, aa_states, ss_states) {
   k <- length(ss_states) # num of latent state
   m <- length(aa_states) # num of observed state
@@ -217,19 +221,19 @@ MLE <- function(data, aa_states, ss_states) {
 }
 ```
 
-```{r}
+```{r compute_MLE}
 res <- MLE(train, aa_states, ss_states)
 ```
 
-```{r}
+```{r print_ini_vector}
 res$I
 ```
 
-```{r}
+```{r print_emission_matrix}
 res$E
 ```
 
-```{r}
+```{r print_transition_matrix}
 res$Tr
 ```
 
@@ -240,7 +244,7 @@ res$Tr
 
 ### Eigenvalue method
 
-```{r}
+```{r estimate_stationary_distribution_eigen}
 eigens <- eigen(t(res$Tr))
 
 index <- which(eigens$values %>% near(1.0))[1]
@@ -253,7 +257,7 @@ pi_eigen
 
 ### Brute-force
 
-```{r}
+```{r estimate_stationary_distribution_bruteforce}
 # compute Tr %*% Tr until there's no huge difference between the two
 # matrices
 Tr <- res$Tr
@@ -273,7 +277,7 @@ while (TRUE) {
 pi_brute
 ```
 
-```{r}
+```{r compare_eigen_bruteforce}
 near(pi_eigen, pi_brute, tol=1e-5)
 ```
 
@@ -290,19 +294,19 @@ near(pi_eigen, pi_brute, tol=1e-5)
 > predicted secondary structure as a tsv file and hand it in together with your
 > pdf.
 
-```{r}
+```{r predict_secondary_structure_on_test}
 predict_test <- data.frame(test[,2])
 colnames(predict_test) <- c("AminoAcids")
 predict_test <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_test)
 ```
 
-```{r}
+```{r predict_new}
 predict_new <- data.frame(new[,2])
 colnames(predict_new) <- c("AminoAcids")
 predict_new <- viterbi(log(res$E), log(res$Tr), log(res$I), predict_new)
 ```
 
-```{r}
+```{r save_predict_new_for_handin}
 # save predict new to a tsv file
 write.table(predict_new, file="proteins_new.tsv", sep="\t", quote=FALSE, row.names=FALSE)
 ```
@@ -317,13 +321,13 @@ write.table(predict_new, file="proteins_new.tsv", sep="\t", quote=FALSE, row.nam
 > Run a thousand bootstraps and compute the empirical $95\%$ confidence intervals
 > for each single parameter in $\{I_i\}_i$, $\{E_i\}_i$ and $\{T_i\}_i$.
 
-```{r}
+```{r run_1000_bootstraps}
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 
 # 1000 rounds of bootstrap
 start_time <- Sys.time()
-df <- foreach(i=1:1000, .combine=rbind) %dopar% {
+df <- foreach(i=1:1000, .combine=rbind, .packages=c("foreach", "tidyverse")) %dopar% {
   # allow duplicates
   picked <- sample(seq_len(nrow(train)), size=nrow(train), replace = TRUE)
   bootstrap <- train[picked, ]
@@ -333,9 +337,11 @@ df <- foreach(i=1:1000, .combine=rbind) %dopar% {
 end_time <- Sys.time()
 end_time - start_time
 stopImplicitCluster()
+registerDoSEQ()
 ```
 
-```{r}
+
+```{r define_compute_confidence_interval}
 compute_ci <- function(list_of_matrix) {
   # iterate over each matrix
   mat <- as.data.frame(list_of_matrix[[1]])
@@ -359,31 +365,23 @@ compute_ci <- function(list_of_matrix) {
 }
 ```
 
-```{r}
+```{r get_I_as_data_frame}
 I_emp <- as.data.frame(df[, "I"])
 ```
 
-```{r}
+```{r compute_CI_I}
 CI_I <- apply(I_emp, 1, quantile, probs=c(.025, .975))
 CI_I
 ```
 
-```{r}
+```{r compute_CI_E}
 CI_E <- compute_ci(df[, "E"])
 CI_E
 ```
 
-```{r}
+```{r compute_CI_Tr}
 CI_Tr <- compute_ci(df[, "Tr"])
 CI_Tr
-```
-
-
-```{r, fig.height=16, fig.width=44, eval=FALSE}
-# options(repr.plot.width = 20, repr.plot.height =30)
-ggplot(gather(data), aes(value)) +
-  geom_histogram(binwidth = 1e-3, color = "black", fill = "black") +
-  facet_wrap(~key, nrow = 8, scales = 'free')
 ```
 
 ## (f)
@@ -405,8 +403,9 @@ $$
 > Viterbi algorithm over all sequences (i.e. call `summary` on the vector of
 > accuracies)?
 
-```{r}
-accuracy_viterbi <- foreach (i=1:nrow(test), .combine = c) %dopar% {
+```{r compute_accuracy_of_viterbi}
+registerDoParallel(num_cores)
+accuracy_viterbi <- foreach (i=1:nrow(test), .combine = c, .packages=c("foreach", "tidyverse")) %dopar% {
   predicted <- predict_test$PredictedStructure[i] %>%
     strsplit("") %>% 
     unlist()
@@ -416,6 +415,8 @@ accuracy_viterbi <- foreach (i=1:nrow(test), .combine = c) %dopar% {
   acc <- sum(truth == predicted) / length(predicted)
   return(acc)
 }
+stopImplicitCluster()
+registerDoSEQ()
 summary(accuracy_viterbi)
 ```
 
@@ -425,8 +426,8 @@ summary(accuracy_viterbi)
 > for all sequences. Compare the global accuracies of the Viterbi and the random
 > approach and plot all accuracy distributions using boxplots.
 
-```{r}
-set.seed(2023)
+```{r random_guessing}
+set.seed(42)
 accuracy_random <- foreach (i=1:nrow(test), .combine = c) %dopar% {
   truth <- test$structure[i] %>% 
     strsplit("") %>% 
@@ -438,7 +439,7 @@ accuracy_random <- foreach (i=1:nrow(test), .combine = c) %dopar% {
 summary(accuracy_random)
 ```
 
-```{r}
+```{r plot_results_random_vs_viterbi}
 boxplot(accuracy_random, accuracy_viterbi,
         ylab = 'Accuracy', names = c('random', 'viterbi'))
 ```
