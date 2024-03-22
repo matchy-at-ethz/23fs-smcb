@@ -25,7 +25,7 @@ $$
 \begin{aligned}
   \frac{dP(t)}{dt} &= \frac{P(dt + t) - P(t)}{dt} & (\text{Definition of derivative})\\
                    &= \frac{P(dt)P(t) - P(t)}{dt} & (\text{Chapman-Kolmogorov's equation}) \\
-                   &= \frac{(I + Rdt)P(t) - P(t)}{dt} (\text{Definition of }P(dt))\\
+                   &= \frac{(I + Rdt)P(t) - P(t)}{dt} & (\text{Definition of }P(dt))\\
                    &= \frac{\cancel{P(t)} + RP(t)dt - \cancel{P(t)}}{dt} \\
                    &= \frac{RP(t)dt}{dt} \\
                    &= RP(t)

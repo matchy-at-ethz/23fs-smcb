@@ -1,5 +1,5 @@
 ---
-title: "Project 3 Markove chains and hidden Markov models"
+title: "Project 3 Markov chains and hidden Markov models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
 mainfont: "KpRoman"
