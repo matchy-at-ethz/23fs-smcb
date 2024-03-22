@@ -1,33 +1,41 @@
 ---
 title: "Project 5: Statistical phylogenetics"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
+mainfont: "KpRoman"
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: [ "amsthm" , "kpfonts", "cancel", "unicode-math" ]
+    pandoc_args: "--pdf-engine-opt=-shell-escape"
+    extra_dependencies: ["amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
 # Problem 12: Transition matrix, rate matrix, and stationary distribution
 
 ## 1. Show that $\frac{dP(t)}{dt} = R \cdot P(t)$
 
+```{=tex}
 \begin{proof}
 
 $$
 \begin{aligned}
-  \frac{dP(t)}{dt} &= \frac{P(t + dt) - P(t)}{dt} & (\text{Definition of derivative})\\
-                   &= \frac{P(t)P(dt) - P(t)}{dt} & (\text{Chapman-Kolmogorov's equation}) \\
-                   &= \frac{P(t) (I + Rdt) - P(t)}{dt} (\text{Definition of }P(dt))\\
+  \frac{dP(t)}{dt} &= \frac{P(dt + t) - P(t)}{dt} & (\text{Definition of derivative})\\
+                   &= \frac{P(dt)P(t) - P(t)}{dt} & (\text{Chapman-Kolmogorov's equation}) \\
+                   &= \frac{(I + Rdt)P(t) - P(t)}{dt} (\text{Definition of }P(dt))\\
                    &= \frac{\cancel{P(t)} + RP(t)dt - \cancel{P(t)}}{dt} \\
                    &= \frac{RP(t)dt}{dt} \\
                    &= RP(t)
 \end{aligned}
 $$
 \end{proof}
-
+```
 ## 2. Assume that the given Markov chain is ergodic with (unique) stationary distribution $\pi$, show that $R\pi = 0$
 
+```{=tex}
 \begin{proof}
 The stationary distribution $\pi$ satisfies:
 
@@ -45,10 +53,10 @@ We can further re-write the left-hand side of the equation:
 
 $$
 \begin{aligned}
-P(t + dt) \pi &= P(t)P(dt)\pi & (\text{Chapman-Kologomorov's equation})\\
-                       &= P(t)(I + Rdt)\pi & (\text{Definition of }P(dt)) \\
-                       &= P(t)\pi + Rdt \cdot P(t)\pi \\
-                       &= \pi + Rdt \pi
+P(dt + t) \pi &= P(dt)P(t)\pi & (\text{Chapman-Kologomorov's equation})\\
+              &= (I + Rdt)P(t)\pi & (\text{Definition of }P(dt)) \\
+              &= P(t)\pi + R \cdot P(t) dt \pi \\
+              &= \pi + Rdt \pi & (\text{Plug in }P(t)\pi = \pi)
 \end{aligned}
 $$
 
@@ -57,12 +65,12 @@ which leads us to the following equality:
 $$
 \begin{aligned}
 \cancel{\pi} + Rdt\pi &= \cancel{\pi} \\
-Rdt\pi &= 0 \\
-R \pi &= 0
+               Rdt\pi &= 0 \\
+                R \pi &= 0
 \end{aligned}
 $$
 \end{proof}
-
+```
 # Problem 13: Phylogenetic trees as Bayesian networks
 
 ## 1. What is the joint probability $P(X, Z|T)$ of the tree?
@@ -109,85 +117,91 @@ In total we have $(16+16) \times 2 + 16 + 4 = 52$ summations.
 
 # Problem 14: Learning phylogenetic trees from sequence alignment data
 
-```{r, include=FALSE}
+```{r load_library, include=FALSE}
 library(ape)
 library(phangorn)
 ```
 
 Load the dataset `ParisRT.txt`.
 
-```{r}
+```{r read_data}
 data <- read.dna("ParisRT.txt", format="sequential")
 data
 ```
 
-Create initial tree topology for the alignment using neighbor joining and K80 model.
+Create initial tree topology for the alignment using neighbor joining
+and K80 model.
 
-```{r}
-ini_tree <- NJ(dist.dna(data, model = "K80"))
+```{r create_ini_tree}
+set.seed(42)
+tree.ini <- NJ(dist.dna(data, model = "K80"))
 ```
 
 Plot the initial tree.
 
-```{r}
-plot.phylo(ini_tree)
+```{r plot_initial_tree, fig.width=10, fig.height=5}
+plot.phylo(tree.ini)
 ```
 
-```{r}
-tree_ML <- pml(ini_tree, phyDat(data), model = "K80")
-tree_ML
+```{r fit_k80_model}
+tree.ML <- pml(tree.ini, phyDat(data), model = "K80")
+tree.ML
 ```
 
 Find the optimal parameters of K80 model for rate matrix.
 
-```{r}
-tree_optim_Q <- optim.pml(tree_ML,
-                optQ = TRUE,
-                optNni = FALSE,
-                optBf = FALSE,
-                optInv = FALSE,
-                optGamma = FALSE,
-                optEdge = FALSE,
-                optRate = FALSE,
-                optRooted = FALSE,
-                model = "K80")
+```{r optim_k80}
+tree.optim.Q <- optim.pml(
+  tree.ML,
+  optQ = TRUE,
+  optNni = FALSE,
+  optBf = FALSE,
+  optInv = FALSE,
+  optGamma = FALSE,
+  optEdge = FALSE,
+  optRate = FALSE,
+  optRooted = FALSE,
+  model = "K80"
+)
 ```
 
-```{r}
-tree_optim_Q
+```{r print_optim_k80}
+tree.optim.Q
 ```
 
-Optimize for branch lengths, nucelotide substitution rates and tree topology
- simultaneously.
+Optimize for branch lengths, nucelotide substitution rates and tree
+topology simultaneously.
 
-```{r}
-tree_optim <- optim.pml(tree_ML,
-                optQ = TRUE,       # rate matrix
-                optNni = TRUE,     # tree topology
-                optBf = FALSE,     # base frequencies
-                optInv = FALSE,    # proportion of var size
-                optGamma = FALSE,  # gamma rate param
-                optEdge = TRUE,    # edge lengths
-                optRate = FALSE,   # overall rate
-                optRooted = FALSE, # edge lengths of a rooted tree
-                model = "K80")
+```{r optim_several}
+tree.optim <- optim.pml(
+  tree.ML,
+  optQ = TRUE,       # rate matrix
+  optNni = TRUE,     # tree topology
+  optBf = FALSE,     # base frequencies
+  optInv = FALSE,    # proportion of var size
+  optGamma = FALSE,  # gamma rate param
+  optEdge = TRUE,    # edge lengths
+  optRate = FALSE,   # overall rate
+  optRooted = FALSE, # edge lengths of a rooted tree
+  model = "K80"
+)
 ```
 
-```{r}
-tree_optim
+```{r print_optim_tree}
+tree.optim
 ```
 
-Bootstrap on optimised model. The program resampled the nucleotides in the
- alignment (columns in the input matrix).
+Bootstrap on optimised model. The program resampled the nucleotides in
+the alignment (columns in the input matrix).
 
-```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
-bootstrap_trees <- bootstrap.pml(tree_optim, optNni = TRUE)
+```{r bootstrap, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+bootstrap <- bootstrap.pml(tree.optim, optNni = TRUE)
 ```
 
-```{r}
-plotBS(tree_optim$tree, bootstrap_trees, type = "phylogram")
+```{r plot_bootstrap, fig.width=10, fig.height=5}
+plotBS(tree.optim$tree, bootstrap, type = "phylogram")
 ```
 
-`Mme_S` is more likely to affect patient `Mme_L`. The bootstrap support is 100%
- (in my run), suggesting `Mme_S` and `Mme_L` share a more recent ancestor
-  (closer relationship) than `Mr D`
+`Mme_S` is more likely to affect patient `Mme_L`. The bootstrap support
+is 98% (in my run with seed `42`), suggesting `Mme_S` and `Mme_L` share a more recent
+ancestor (closer relationship) than `Mr D`
