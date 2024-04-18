@@ -26,48 +26,7 @@ knitr::opts_chunk$set(engine.path = list(
 ))
 ```
 
-<!-- Problem 17 and 18 are handwritten (not energetic enough for formatting this time -->
-<!--  as I usually do) and are included using `pdfpages`. Thye don't fit under the -->
-<!-- title page so I put problem 19 at the beginning. -->
-
 # Problem 17: Junction tree algorithm
-
-Given the original Bayesian network:
-
-```{r dag, engine='dot', fig.cap="DAG", echo=FALSE, fig.width=5, fig.height=5}
-digraph {
-  node [shape=circle]
-  A[pos="0,0!"]
-  B[pos="1,0!"]
-  C[pos="0.5,-1!"]
-  D[pos="-0.5,-1!"]
-  E[pos="-1,-2!"]
-  F[pos="0,-2!"]
-  G[pos="-0.5,-3!"]
-  I[pos="0.5,-3!"]
-  H[pos="-1,-4!"]
-  J[pos="0,-4!"]
-  K[pos="1,-4!"]
-
-  { A B } -> C
-  C -> F
-  
-  D -> { E F }
-  
-  { E F } -> G
-  F -> I
-  
-  G -> H
-  
-  I -> { J K }
-  
-  { rank=source; A; B; }
-  { rank=same;   C; D; }
-  { rank=same;   F; E; }
-  { rank=same;   G; I; }
-  { rank=sink;   H; J; K; }
-}
-```
 
 ## (a) Build the *junction tree* of the network
 
@@ -205,6 +164,8 @@ graph junction_tree {
     IK -- I2
 }
 ```
+
+\pagebreak
 
 ## (b) Write the joint probability $P(U)$ in terms of the cluster and separator potentials
 
