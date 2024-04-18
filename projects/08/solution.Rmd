@@ -1,25 +1,25 @@
 ---
 title: "Project 8 Nested Effect Models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
 mainfont: "KpRoman"
 monofont: "Fira Code Regular Nerd Font Complete"
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
+    pandoc_args: "--pdf-engine-opt=-shell-escape"
+    extra_dependencies: ["amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r, include=FALSE}
+```{r dependencies, include=FALSE}
 library(mnem)
 library(doParallel)
 library(foreach)
-library(unix)
 library(ggplot2)
-```
-
-```{r, include=FALSE}
-rlimit_as(1e12, 1e12)
 ```
 
 # Problem 20: Classical NEMs
@@ -31,24 +31,9 @@ rlimit_as(1e12, 1e12)
 Define a function to make any $\Phi$ matrix transitive closed by powering it up
  until convergence.
 
-```{r}
-transitive_closify <- function(phi) {
-  old_phi <- phi
-  while (TRUE) {
-    new_phi <- old_phi %*% phi
-    new_phi[new_phi > 0] <- 1
-    if (isTRUE(all.equal(new_phi, old_phi))) {
-      break
-    }
-    old_phi <- new_phi
-  }
-  return(new_phi)
-}
-```
-
 Construct $\Phi$ for Model (a).
 
-```{r}
+```{r init_phi_a}
 phi_a <- array(
   dim = c(5, 5),
   dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
@@ -60,16 +45,14 @@ phi_a["S2", ] <- c( 0,  1,  0,  0,  1)
 phi_a["S3", ] <- c( 0,  0,  1,  1,  1)
 phi_a["S4", ] <- c( 0,  0,  0,  1,  1)
 phi_a["S5", ] <- c( 0,  0,  0,  0,  1)
-```
 
-```{r}
-phi_a <- transitive_closify(phi_a)
+phi_a <- transitive.closure(phi_a)
 phi_a
 ```
 
 Construct $\Phi$ for Model (b).
 
-```{r}
+```{r init_phi_b}
 phi_b <- array(
   dim = c(5, 5),
   dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
@@ -81,10 +64,8 @@ phi_b["S2", ] <- c( 0,  1,  0,  0,  1)
 phi_b["S3", ] <- c( 1,  0,  1,  1,  1)
 phi_b["S4", ] <- c( 0,  0,  0,  1,  1)
 phi_b["S5", ] <- c( 0,  0,  0,  0,  1)
-```
 
-```{r}
-phi_b <- transitive_closify(phi_b)
+phi_b <- transitive.closure(phi_b)
 phi_b
 ```
 
@@ -92,7 +73,7 @@ phi_b
 
 Define $\Theta$ for Model (a).
 
-```{r}
+```{r init_theta_a}
 theta_a <- array(
   dim = c(5, 6),
   dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
@@ -109,7 +90,7 @@ theta_a
 
 Define $\Theta$ for Model (b).
 
-```{r}
+```{r init_theta_b}
 theta_b <- array(
   dim = c(5, 6),
   dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
@@ -130,6 +111,7 @@ theta_b
 F_a <- phi_a %*% theta_a
 F_a
 ```
+
 ```{r}
 F_b <- phi_b %*% theta_b
 F_b
@@ -167,7 +149,8 @@ Calculate the marginal log-likelihood ratio (network score) given the data by
 network_score_a <- scoreAdj(D_a,
                             adj = phi_a,
                             method = "disc",
-                            fpfn = c(0.05, 0.01)
+                            fpfn = c(0.05, 0.01),
+                            logtype = exp(1)
                             )$score
 network_score_a
 ```
@@ -176,7 +159,8 @@ network_score_a
 network_score_b <- scoreAdj(D_b,
                             adj = phi_b,
                             method = "disc",
-                            fpfn = c(0.05, 0.01)
+                            fpfn = c(0.05, 0.01),
+                            logtype = exp(1)
                             )$score
 network_score_b
 ```
@@ -235,6 +219,7 @@ u["S1", ] <- c( 1,  1,  1,  0)
 u["S2", ] <- c( 0,  1,  1,  1)
 u["S3", ] <- c( 0,  0,  1,  1)
 u["S4", ] <- c( 0,  0,  0,  1)
+u <- transitive.closure(u)
 u
 ```
 
@@ -249,8 +234,10 @@ v1["S1", ] <- c( 1,  1,  1,  0)
 v1["S2", ] <- c( 0,  1,  1,  1)
 v1["S3", ] <- c( 0,  0,  1,  0)
 v1["S4", ] <- c( 0,  0,  0,  1)
+v1 <- transitive.closure(v1)
 v1
 ```
+
 
 ```{r}
 # Initialization of v2
@@ -263,6 +250,7 @@ v2["S1", ] <- c( 1,  0,  0,  0)
 v2["S2", ] <- c( 1,  1,  1,  0)
 v2["S3", ] <- c( 1,  0,  1,  0)
 v2["S4", ] <- c( 1,  0,  0,  1)
+v2 <- transitive.closure(v2)
 v2
 ```
 
@@ -274,7 +262,7 @@ s_uv2 <- sum(u != v2)
 
 ```{r}
 # generate all the possible networks
-all_networks <- mnem:::enumerate.models(S_genes, trans.close = FALSE)
+all_networks <- mnem:::enumerate.models(S_genes, trans.close = TRUE)
 ```
 
 ```{r, results='hide'}
@@ -289,6 +277,7 @@ end <- Sys.time()
 end - start
 stopImplicitCluster()
 ```
+
 ```{r}
 compute_C <- function(lambda, s_uw) {
   res <- foreach (i=1:length(s_uw), .combine = c) %dopar% {
