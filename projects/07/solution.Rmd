@@ -1,67 +1,311 @@
 ---
 title: "Projecy 7 Exact inference in graphical models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
+mainfont: "KpRoman"
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: 72
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies:  [ "pdfpages", "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+    pandoc_args: "--pdf-engine-opt=-shell-escape"
+    extra_dependencies: ["amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r, include=FALSE}
+```{r dependencies, include=FALSE}
 library(foreach)
 library(doParallel)
 ```
-Problem 17 and 18 are handwritten (not energetic enough for formatting this time
- as I usually do) and are included using `pdfpages`. Thye don't fit under the
-title page so I put problem 19 at the beginning.
+
+```{r knitr_config, include=FALSE}
+# the "pos" option is only available for neato or fdp
+knitr::opts_chunk$set(engine.path = list(
+  dot = Sys.which("fdp") # path to fdp
+))
+```
+
+<!-- Problem 17 and 18 are handwritten (not energetic enough for formatting this time -->
+<!--  as I usually do) and are included using `pdfpages`. Thye don't fit under the -->
+<!-- title page so I put problem 19 at the beginning. -->
+
+# Problem 17: Junction tree algorithm
+
+Given the original Bayesian network:
+
+```{r dag, engine='dot', fig.cap="DAG", echo=FALSE, fig.width=5, fig.height=5}
+digraph {
+  node [shape=circle]
+  A[pos="0,0!"]
+  B[pos="1,0!"]
+  C[pos="0.5,-1!"]
+  D[pos="-0.5,-1!"]
+  E[pos="-1,-2!"]
+  F[pos="0,-2!"]
+  G[pos="-0.5,-3!"]
+  I[pos="0.5,-3!"]
+  H[pos="-1,-4!"]
+  J[pos="0,-4!"]
+  K[pos="1,-4!"]
+
+  { A B } -> C
+  C -> F
+  
+  D -> { E F }
+  
+  { E F } -> G
+  F -> I
+  
+  G -> H
+  
+  I -> { J K }
+  
+  { rank=source; A; B; }
+  { rank=same;   C; D; }
+  { rank=same;   F; E; }
+  { rank=same;   G; I; }
+  { rank=sink;   H; J; K; }
+}
+```
+
+## (a) Build the *junction tree* of the network
+
+
+```{r moral_graph, engine='dot', fig.cap="Moral graph", echo=FALSE, fig.width=5, fig.height=5}
+graph moral_graph {
+  node [ shape=circle ];
+    
+  A[pos="0,0!"]
+  B[pos="1,0!"]
+  C[pos="0.5,-1!"]
+  D[pos="-0.5,-1!"]
+  E[pos="-1,-2!"]
+  F[pos="0,-2!"]
+  G[pos="-0.5,-3!"]
+  I[pos="0.5,-3!"]
+  H[pos="-1,-4!"]
+  J[pos="0,-4!"]
+  K[pos="1,-4!"]
+
+    A -- { B C }
+
+    B -- C
+
+    C -- { D F }
+
+    D -- { E F }
+
+    E -- { F G }
+
+    F -- { G I }
+
+    G -- H
+  
+    I -- { J K }
+}
+```
+
+```{r junction_graph, engine='dot', fig.cap="Junction graph", echo=FALSE, fig.width=5, fig.height=5}
+graph junction_graph {
+
+    node [shape=circle]
+    
+    ABC[pos="0,0!", fixedsize=true, width=0.8]
+    C[pos="0,-1!", shape=square, fixedsize=true, width=0.3];
+    CDF[pos="0,-2!", fixedsize=true, width=0.8]; 
+    DF[pos="-1,-2!", shape=square, fixedsize=true, width=0.3]; 
+    DEF[pos="-2,-2!", fixedsize=true, width=0.8];
+    EF[pos="-2,-3!", shape=square, fixedsize=true, width=0.3]; 
+    F1[pos="-1,-2.85!", label="F", shape=square, fixedsize=true, width=0.3]; 
+    F3[pos="-0.75,-3.25!", label="F", shape=square, fixedsize=true, width=0.3]; 
+    F2[pos="0,-3!", label="F", shape=square, fixedsize=true, width=0.3]; 
+    F4[pos="-1,-4!", label="F", shape=square, fixedsize=true, width=0.3];
+    EFG[pos="-2,-4!", fixedsize=true, width=0.8]; FI[pos="0,-4!", fixedsize=true, width=0.8];
+    G[pos="-2,-5!", shape=square, fixedsize=true, width=0.3]; 
+    I1[pos="-0.5,-5!", label="I", shape=square, fixedsize=true, width=0.3]; 
+    I2[pos="0.5,-5!", label="I", shape=square, fixedsize=true, width=0.3]; 
+    I3[pos="0,-6!", label="I", shape=square, fixedsize=true, width=0.3];
+    GH[pos="-2,-6!", fixedsize=true, width=0.8]; 
+    IJ[pos="-1,-6!", fixedsize=true, width=0.8]; 
+    IK[pos="1,-6!", fixedsize=true, width=0.8];
+  
+    ABC -- C
+
+    CDF -- C
+    CDF -- DF
+    CDF -- F1
+    CDF -- F2
+  
+    DEF -- DF
+    DEF -- EF
+    DEF -- F3
+  
+    EFG -- EF
+    EFG -- F1
+    EFG -- F4
+    EFG -- G
+
+    FI -- F2
+    FI -- F3
+    FI -- F4
+    FI -- I1
+    FI -- I2
+
+    GH -- G
+    
+    IJ -- I1
+    IJ -- I3
+
+    IK -- I2
+    IK -- I3
+}
+```
+
+```{r junction_tree, engine='dot', fig.cap="Junction tree", echo=FALSE, fig.width=5, fig.height=5}
+graph junction_tree {
+
+    node [shape=circle]
+    
+    ABC[pos="0,0!", fixedsize=true, width=0.8]
+    C[pos="0,-1!", shape=square, fixedsize=true, width=0.3];
+    CDF[pos="0,-2!", fixedsize=true, width=0.8]; 
+    DF[pos="-1,-2!", shape=square, fixedsize=true, width=0.3]; 
+    DEF[pos="-2,-2!", fixedsize=true, width=0.8];
+    EF[pos="-2,-3!", shape=square, fixedsize=true, width=0.3]; 
+    F2[pos="0,-3!", label="F", shape=square, fixedsize=true, width=0.3]; 
+    EFG[pos="-2,-4!", fixedsize=true, width=0.8]; FI[pos="0,-4!", fixedsize=true, width=0.8];
+    G[pos="-2,-5!", shape=square, fixedsize=true, width=0.3]; 
+    I1[pos="-0.5,-5!", label="I", shape=square, fixedsize=true, width=0.3]; 
+    I2[pos="0.5,-5!", label="I", shape=square, fixedsize=true, width=0.3]; 
+    GH[pos="-2,-6!", fixedsize=true, width=0.8]; 
+    IJ[pos="-1,-6!", fixedsize=true, width=0.8]; 
+    IK[pos="1,-6!", fixedsize=true, width=0.8];
+  
+    ABC -- C
+
+    CDF -- C
+    CDF -- DF
+    CDF -- F2
+  
+    DEF -- DF
+    DEF -- EF
+  
+    EFG -- EF
+    EFG -- G
+
+    FI -- F2
+    FI -- I1
+    FI -- I2
+
+    GH -- G
+    
+    IJ -- I1
+
+    IK -- I2
+}
+```
+
+## (b) Write the joint probability $P(U)$ in terms of the cluster and separator potentials
+
+$$
+\begin{aligned}
+P(U) &= \frac{\psi(\text{clique})}{\psi(\text{separator})} \\
+&= \frac{
+  \psi(ABC) \psi(CDF) \psi(DEF) \psi(EFG) \psi(FI) \psi(GH) \psi(IJ) \psi(IK)
+}{
+  \psi(C) \psi(DF) \psi(EF) \psi(F) \psi(G) \psi(I)^2
+}
+\end{aligned}
+$$
+
+# Problem 18: Benefit of storing messages
+
+## Formula for recursively computing forward and backward messages
+
+### Forward message
+
+$$
+\mu_a(x_n) = \sum_{x_{n-1}} \psi_{n-1, n}(x_{n-1}, x_n) \mu_{\alpha}(x_{n-1})
+$$
+
+Initialization:
+
+$$
+\begin{aligned}
+\mu_1(x_1) = 1 & & (\text{so that } \mu_\alpha(x_2) = \sum_{x_1} \psi_{1, 2}(x_1, x_2) \mu_1(x_1)...) 
+\end{aligned}
+$$
+
+### Backward message
+
+$$
+\mu_b(x_n) = \sum_{x_{n+1}} \psi_{n, n+1}(x_n, x_{n+1}) \mu_{\beta}(x_{n+1})
+$$
+
+Initialization:
+
+$$
+\begin{aligned}
+\mu_5(x_5) = 1 & & (\text{so that } \mu_\beta(x_4) = \sum_{x_5} \psi_{4, 5}(x_4, x_5) \mu_5(x_5)...)
+\end{aligned}
+$$
+
+## (b) Complexity for computing marginal probabiliy $P(X_4 = 1)$
+
+It's $O(NK^2)$.
+
+Each node contains $K$ values. Forward $(n-1)K^2$, backward $(N-n)K^2)$. Total = $(N-1)K^2 \rightarrow O(NK^2)$.
+
+## (c) Complexity for computing all marginal probability distributions if messages are stored
+
+If values are stored, after doing one message passing in forward directoin and one message passing in backward direction, we can directly "read off" all probabilities. The total calculation is then $2(N-1)K^2$, or $O(NK^2)$.
+
+In the general case, it will be $N(N-1)K^2$, or $O(N^2K^2)$.
 
 # Problem 19: Message passing on a chain
 
 ## (a) Store clique potentials in an R object
 
-```{r}
+```{r create_clique_potentials}
 # use the hint!
 clique_potentials <- array(dim = c(2, 2, 4),
-                           dimnames = list(
-                             c("0", "1"), c("0", "1"),
-                             c("Psi12", "Psi23", "Psi34", "Psi45")))
+                           dimnames = list(c("0", "1"), c("0", "1"),
+                                           c("Psi12", "Psi23", "Psi34", "Psi45")))
 
 ```
 
-```{r}
-X1 <- c(1/3, 2/3)
+```{r init}
+X1 <- c(2/3, 1/3)
 X2 <- c(4/5, 2/3)
 X3 <- c(5/7, 1/3)
 X4 <- c(3/5, 2/5)
 X5 <- c(1/2, 7/9)
 ```
 
-```{r}
-clique_potentials[ , 1, "Psi12"] <- (1 - X1) * (1 - X2)
-clique_potentials[ , 2, "Psi12"] <- (1 - X1) * X2
-clique_potentials[ ,  , "Psi23"] <- c(1-X3, X3)
-clique_potentials[ ,  , "Psi34"] <- c(1-X4, X4)
-clique_potentials[ ,  , "Psi45"] <- c(1-X5, X5)
+```{r fill_clique_potentials}
+clique_potentials[, 1, "Psi12"] <- X1 * (1 - X2)
+clique_potentials[, 2, "Psi12"] <- X1 * X2
+clique_potentials[,  , "Psi23"] <- c(1 - X3, X3)
+clique_potentials[,  , "Psi34"] <- c(1 - X4, X4)
+clique_potentials[,  , "Psi45"] <- c(1 - X5, X5)
 clique_potentials
 ```
 
 ## (b) Computing forward messages
 
-```{r message=FALSE, results='hide'}
-fwd_msg <- array(dim=c(5, 2),
-                 dimname=list(
-                   c("X1", "X2", "X3", "X4", "X5"),
-                   c("0", "1")
-                 ))
+```{r fwd_msg, message=FALSE, results='hide'}
+fwd_msg <- array(dim = c(5, 2),
+                 dimname = list(c("X1", "X2", "X3", "X4", "X5"),
+                                c("0", "1")))
 fwd_msg["X1", ] <- c(1, 1)
 
-foreach(i=2:5) %do% {
-  fwd_msg[i, ] <- fwd_msg[i-1, ] %*% clique_potentials[, , i-1]
+foreach(i = 2:5) %do% {
+  fwd_msg[i, ] <- fwd_msg[i - 1, ] %*% clique_potentials[, , i - 1]
 }
 ```
 
-```{r}
+```{r print_fwd_msg}
 fwd_msg
 ```
 
@@ -70,41 +314,36 @@ fwd_msg
 
 Initialize in such shape for easy computation :)
 
-```{r message=FALSE, results='hide'}
-bkwd_msg <- array(dim=c(2, 5),
-                 dimname=list(
-                   c("0", "1"),
-                   c("X1", "X2", "X3", "X4", "X5")
-                 ))
+```{r bkwd_msg, message=FALSE, results='hide'}
+bkwd_msg <- array(dim = c(2, 5),
+                  dimname = list(c("0", "1"),
+                                 c("X1", "X2", "X3", "X4", "X5")))
 bkwd_msg[, "X5"] <- c(1, 1)
-foreach (i=4:1) %do% {
-  bkwd_msg[, i] <- clique_potentials[, , i] %*% bkwd_msg[, i+1]
+foreach (i = 4:1) %do% {
+  bkwd_msg[, i] <- clique_potentials[, , i] %*% bkwd_msg[, i + 1]
 }
 ```
 
-```{r}
+```{r print_bkwd_msg}
 bkwd_msg
 ```
-## (d) Compute the marginal probability distribution for eahc node
+## (d) Compute the marginal probability distribution for each node
 
-```{r results='hide'}
-marginal <- array(0, dim=c(5,2),
-                  dimname=list(
-                    c("P(X1)", "P(X2)", "P(X3)", "P(X4)", "P(X5)"),
-                    c("0", "1")))
-foreach (i=1:5) %do% {
-  marginal[i, ] <- fwd_msg[i, ] * bkwd_msg[, i]
+```{r marginals, results='hide'}
+marginal <- array(0, dim = c(5, 2),
+                  dimname = list(c(
+                    "P(X1)", "P(X2)", "P(X3)", "P(X4)", "P(X5)"
+                  ),
+                  c("0", "1")))
+foreach (i = 1:5) %do% {
+  marginal[i,] <- fwd_msg[i,] * bkwd_msg[, i]
 }
 Z <- rowSums(marginal)
 marginal <- marginal / Z
 ```
-```{r}
+
+```{r print_marginals}
 marginal
 ```
 
-```{r echo=FALSE}
-print("The normalising constant Z is 1")
-print(Z)
-```
-
-\includepdf[pages=-]{smcb_project7.pdf}
+The normalising constant Z is `r unique(Z)`.
