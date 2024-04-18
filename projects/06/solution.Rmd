@@ -1,19 +1,21 @@
 ---
 title: "Project 6 Sampling and variational inference"
+# output:
+#   pdf_document:
+#     latex_engine: xelatex
+#     extra_dependencies: [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
+mainfont: "KpRoman"
+editor_options: 
+  markdown: 
+    wrap: 72
 output:
   pdf_document:
     latex_engine: xelatex
-    extra_dependencies: [ "amsthm", "amssymb", "cancel", "kpfonts", "unicode-math" ]
+    pandoc_args: "--pdf-engine-opt=-shell-escape"
+    extra_dependencies: ["amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
-
-I'm sorry that I didn't manage to finish the project on time :(
-but I do want to get feedback for my finished version.
-
-Please give points using my unfinished version -- or if you would be so kind,
-give points using my finished version with late submission deduction for the
- parts I failed to finish on time.
 
 # Problem 15: Monte Carlo estimation of an expected value
 
@@ -302,7 +304,7 @@ sample_RgivenC <- function(C){
 ```
 
 ```{r}
-set.seed(2023)
+set.seed(42)
 ```
 
 ```{r}
@@ -457,15 +459,9 @@ P_R_T_given_S_T_and_W_T_reestimated
 
 ### Estimation from (c)
 
-```{r, echo=FALSE}
-cat("The value computed in (c) is: ", P_R_T_given_S_T_and_W_T)
-```
+The value computed in (c) is: `r toString(P_R_T_given_S_T_and_W_T)`.
 
-### Estimation from (h)
-
-```{r, echo=FALSE}
-cat("The value computed in (h) is: ", P_R_T_given_S_T_and_W_T_reestimated)
-```
+The value computed in (h) is: `r toString(P_R_T_given_S_T_and_W_T_reestimated)`.
 
 ## Analytical compuation
 
@@ -536,7 +532,7 @@ $$
 P_R_T_given_S_T_and_W_T_analytic <- numerator / denominator
 P_R_T_given_S_T_and_W_T_analytic
 ```
-\pagebreak
+
 
 ```{r}
 # Create a data frame with the three probabilities
