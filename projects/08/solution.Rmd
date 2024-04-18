@@ -3,7 +3,6 @@ title: "Project 8 Nested Effect Models"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
 author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
 mainfont: "KpRoman"
-monofont: "Fira Code Regular Nerd Font Complete"
 editor_options: 
   chunk_output_type: console
   markdown: 
@@ -34,17 +33,15 @@ Define a function to make any $\Phi$ matrix transitive closed by powering it up
 Construct $\Phi$ for Model (a).
 
 ```{r init_phi_a}
-phi_a <- array(
-  dim = c(5, 5),
-  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
-                  c("S1", "S2", "S3", "S4", "S5"))
-)
+phi_a <- array(dim = c(5, 5),
+               dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                               c("S1", "S2", "S3", "S4", "S5")))
 #                  S1, S2, S3, S4, S5
-phi_a["S1", ] <- c( 1,  0,  1,  1,  0)
-phi_a["S2", ] <- c( 0,  1,  0,  0,  1)
-phi_a["S3", ] <- c( 0,  0,  1,  1,  1)
-phi_a["S4", ] <- c( 0,  0,  0,  1,  1)
-phi_a["S5", ] <- c( 0,  0,  0,  0,  1)
+phi_a["S1",] <- c(1,  0,  1,  1,  0)
+phi_a["S2",] <- c(0,  1,  0,  0,  1)
+phi_a["S3",] <- c(0,  0,  1,  1,  1)
+phi_a["S4",] <- c(0,  0,  0,  1,  1)
+phi_a["S5",] <- c(0,  0,  0,  0,  1)
 
 phi_a <- transitive.closure(phi_a)
 phi_a
@@ -53,17 +50,15 @@ phi_a
 Construct $\Phi$ for Model (b).
 
 ```{r init_phi_b}
-phi_b <- array(
-  dim = c(5, 5),
-  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
-                  c("S1", "S2", "S3", "S4", "S5"))
-)
+phi_b <- array(dim = c(5, 5),
+               dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
+                               c("S1", "S2", "S3", "S4", "S5")))
 #                  S1, S2, S3, S4, S5
-phi_b["S1", ] <- c( 1,  0,  0,  1,  0)
-phi_b["S2", ] <- c( 0,  1,  0,  0,  1)
-phi_b["S3", ] <- c( 1,  0,  1,  1,  1)
-phi_b["S4", ] <- c( 0,  0,  0,  1,  1)
-phi_b["S5", ] <- c( 0,  0,  0,  0,  1)
+phi_b["S1",] <- c(1,  0,  0,  1,  0)
+phi_b["S2",] <- c(0,  1,  0,  0,  1)
+phi_b["S3",] <- c(1,  0,  1,  1,  1)
+phi_b["S4",] <- c(0,  0,  0,  1,  1)
+phi_b["S5",] <- c(0,  0,  0,  0,  1)
 
 phi_b <- transitive.closure(phi_b)
 phi_b
@@ -74,45 +69,45 @@ phi_b
 Define $\Theta$ for Model (a).
 
 ```{r init_theta_a}
-theta_a <- array(
-  dim = c(5, 6),
-  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
-                  c("E1", "E2", "E3", "E4", "E5", "E6"))
-)
+theta_a <- array(dim = c(5, 6),
+                 dimnames = list(
+                   c("S1", "S2", "S3", "S4", "S5"),
+                   c("E1", "E2", "E3", "E4", "E5", "E6")
+                 ))
 #                    E1, E2, E3, E4, E5, E6
-theta_a["S1", ] <- c( 0,  0,  0,  0,  0,  0)
-theta_a["S2", ] <- c( 0,  0,  0,  1,  0,  1)
-theta_a["S3", ] <- c( 1,  1,  0,  0,  0,  0)
-theta_a["S4", ] <- c( 0,  0,  1,  0,  0,  0)
-theta_a["S5", ] <- c( 0,  0,  0,  0,  1,  0)
+theta_a["S1",] <- c(0,  0,  0,  0,  0,  0)
+theta_a["S2",] <- c(0,  0,  0,  1,  0,  1)
+theta_a["S3",] <- c(1,  1,  0,  0,  0,  0)
+theta_a["S4",] <- c(0,  0,  1,  0,  0,  0)
+theta_a["S5",] <- c(0,  0,  0,  0,  1,  0)
 theta_a
 ```
 
 Define $\Theta$ for Model (b).
 
 ```{r init_theta_b}
-theta_b <- array(
-  dim = c(5, 6),
-  dimnames = list(c("S1", "S2", "S3", "S4", "S5"),
-                  c("E1", "E2", "E3", "E4", "E5", "E6"))
-)
+theta_b <- array(dim = c(5, 6),
+                 dimnames = list(
+                   c("S1", "S2", "S3", "S4", "S5"),
+                   c("E1", "E2", "E3", "E4", "E5", "E6")
+                 ))
 #                    E1, E2, E3, E4, E5, E6
-theta_b["S1", ] <- c( 1,  1,  0,  0,  0,  0)
-theta_b["S2", ] <- c( 0,  0,  0,  1,  0,  1)
-theta_b["S3", ] <- c( 0,  0,  0,  0,  0,  0)
-theta_b["S4", ] <- c( 0,  0,  1,  0,  0,  0)
-theta_b["S5", ] <- c( 0,  0,  0,  0,  1,  0)
+theta_b["S1",] <- c(1,  1,  0,  0,  0,  0)
+theta_b["S2",] <- c(0,  0,  0,  1,  0,  1)
+theta_b["S3",] <- c(0,  0,  0,  0,  0,  0)
+theta_b["S4",] <- c(0,  0,  1,  0,  0,  0)
+theta_b["S5",] <- c(0,  0,  0,  0,  1,  0)
 theta_b
 ```
 
 ### Determine the corresponding expected effect patterns ($F$)
 
-```{r}
+```{r expected_effect_pattern_A}
 F_a <- phi_a %*% theta_a
 F_a
 ```
 
-```{r}
+```{r expected_effect_pattern_B}
 F_b <- phi_b %*% theta_b
 F_b
 ```
@@ -122,12 +117,12 @@ F_b
 If we assume no noise (no false positives and false negatives)... then the $D$
  matrix is simply the $F$ matrix transpose.
 
-```{r}
+```{r D_a}
 D_a <- t(F_a)
 D_a
 ```
 
-```{r}
+```{r D_b}
 D_b <- t(F_b)
 D_b
 ```
@@ -136,7 +131,7 @@ Given the discrete data $D_a$ and $D_b$ (sorry for the different notation from
  the exercise pdf) it's not possible to tell apart the two models because they
   are identical.
 
-```{r}
+```{r assume_equal}
 all.equal(D_a, D_b)
 ```
 
@@ -145,23 +140,25 @@ all.equal(D_a, D_b)
 Calculate the marginal log-likelihood ratio (network score) given the data by
  setting the false positive rate to be 5\% and the false negative rate to be 1\%.
 
-```{r}
-network_score_a <- scoreAdj(D_a,
-                            adj = phi_a,
-                            method = "disc",
-                            fpfn = c(0.05, 0.01),
-                            logtype = exp(1)
-                            )$score
+```{r network_score_a}
+network_score_a <- scoreAdj(
+  D_a,
+  adj = phi_a,
+  method = "disc",
+  fpfn = c(0.05, 0.01),
+  logtype = exp(1)
+)$score
 network_score_a
 ```
 
-```{r}
-network_score_b <- scoreAdj(D_b,
-                            adj = phi_b,
-                            method = "disc",
-                            fpfn = c(0.05, 0.01),
-                            logtype = exp(1)
-                            )$score
+```{r network_score_b}
+network_score_b <- scoreAdj(
+  D_b,
+  adj = phi_b,
+  method = "disc",
+  fpfn = c(0.05, 0.01),
+  logtype = exp(1)
+)$score
 network_score_b
 ```
 
@@ -204,99 +201,108 @@ So the basic implementation idea would be:
 
 Implementation in R is in the following code blocks.
 
-```{r}
+```{r s_gene_names}
 S_genes <- c("S1", "S2", "S3", "S4")
 ```
 
-```{r}
+```{r init_u}
 # Initialization of u
-u <- array(
-  dim = c(4, 4),
-  dimnames = list(S_genes, S_genes)
-)
+u <- array(dim = c(4, 4),
+           dimnames = list(S_genes, S_genes))
 #              S1, S2, S3, S4
-u["S1", ] <- c( 1,  1,  1,  0)
-u["S2", ] <- c( 0,  1,  1,  1)
-u["S3", ] <- c( 0,  0,  1,  1)
-u["S4", ] <- c( 0,  0,  0,  1)
+u["S1",] <- c(1,  1,  1,  0)
+u["S2",] <- c(0,  1,  1,  1)
+u["S3",] <- c(0,  0,  1,  1)
+u["S4",] <- c(0,  0,  0,  1)
 u <- transitive.closure(u)
 u
 ```
 
-```{r}
+```{r init_v1}
 # Initialization of v1
-v1 <- array(
-  dim = c(4, 4),
-  dimnames = list(S_genes, S_genes)
-)
+v1 <- array(dim = c(4, 4),
+            dimnames = list(S_genes, S_genes))
 #               S1, S2, S3, S4
-v1["S1", ] <- c( 1,  1,  1,  0)
-v1["S2", ] <- c( 0,  1,  1,  1)
-v1["S3", ] <- c( 0,  0,  1,  0)
-v1["S4", ] <- c( 0,  0,  0,  1)
+v1["S1",] <- c(1,  1,  1,  0)
+v1["S2",] <- c(0,  1,  1,  1)
+v1["S3",] <- c(0,  0,  1,  0)
+v1["S4",] <- c(0,  0,  0,  1)
 v1 <- transitive.closure(v1)
 v1
 ```
 
 
-```{r}
+```{r init_v2}
 # Initialization of v2
-v2 <- array(
-  dim = c(4, 4),
-  dimnames = list(S_genes, S_genes)
-)
+v2 <- array(dim = c(4, 4),
+            dimnames = list(S_genes, S_genes))
 #               S1, S2, S3, S4
-v2["S1", ] <- c( 1,  0,  0,  0)
-v2["S2", ] <- c( 1,  1,  1,  0)
-v2["S3", ] <- c( 1,  0,  1,  0)
-v2["S4", ] <- c( 1,  0,  0,  1)
+v2["S1",] <- c(1,  0,  0,  0)
+v2["S2",] <- c(1,  1,  1,  0)
+v2["S3",] <- c(1,  0,  1,  0)
+v2["S4",] <- c(1,  0,  0,  1)
 v2 <- transitive.closure(v2)
 v2
 ```
 
-```{r}
+```{r compute_s_uvs}
 # compute s_uv1 and s_uv2
 s_uv1 <- sum(u != v1)
 s_uv2 <- sum(u != v2)
 ```
 
-```{r}
+```{r generate_all_networks}
 # generate all the possible networks
 all_networks <- mnem:::enumerate.models(S_genes, trans.close = TRUE)
 ```
 
-```{r, results='hide'}
+```{r compute_s_uw, results='hide'}
 # compute s_uw for all networks
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 start <- Sys.time()
-s_uw <- foreach (i=1:length(all_networks), .combine = c) %dopar% {
-  sum(u != all_networks[[i]])
-}
+s_uw <-
+  foreach (
+    i = 1:length(all_networks),
+    .combine = c,
+    .packages = c("foreach")
+  ) %dopar% {
+    sum(u != all_networks[[i]])
+  }
 end <- Sys.time()
 end - start
 stopImplicitCluster()
 ```
 
-```{r}
+```{r compute_C}
 compute_C <- function(lambda, s_uw) {
-  res <- foreach (i=1:length(s_uw), .combine = c) %dopar% {
-    (1 - lambda)^s_uw[i] * lambda
-  }
+  res <-
+    foreach (
+      i = 1:length(s_uw),
+      .combine = c,
+      .packages = c("foreach")
+    ) %dopar% {
+      (1 - lambda) ^ s_uw[i] * lambda
+    }
   return(sum(res))
 }
 ```
 
-```{r}
+```{r compute_trans_prob}
 # Compute transitive probability
 registerDoParallel(num_cores)
 start <- Sys.time()
-trans_prob <- foreach (lambda=seq(0.1, 0.9, by=0.1), .combine = rbind) %dopar% {
-  C_u <- compute_C(lambda = lambda, s_uw = s_uw)
-  res1 <- (1 - lambda)^s_uv1 * lambda / C_u
-  res2 <- (1 - lambda)^s_uv2 * lambda / C_u
-  return(c(res1, res2))
-}
+trans_prob <-
+  foreach (
+    lambda = seq(0.1, 0.9, by = 0.1),
+    .combine = rbind,
+    .packages = c("foreach")
+  ) %dopar% {
+    C_u <- compute_C(lambda = lambda, s_uw = s_uw)
+    res1 <- (1 - lambda) ^ s_uv1 * lambda / C_u
+    res2 <- (1 - lambda) ^ s_uv2 * lambda / C_u
+    return(c(res1, res2))
+  }
 end <- Sys.time()
 end - start
 stopImplicitCluster()
@@ -309,12 +315,15 @@ trans_prob
 
 Plot the transition probabilites as a function of $\lambda$ for $v_1$ and $v_2$.
 
-```{r}
-df <- data.frame(lambda = row.names(trans_prob), trans_prob, row.names = NULL)
+```{r make_df}
+df <-
+  data.frame(lambda = row.names(trans_prob),
+             trans_prob,
+             row.names = NULL)
 df$lambda <- as.numeric(df$lambda)
 ```
 
-```{r}
+```{r plot_trans_prob}
 ggplot(data = df, aes(x = lambda, group = 1)) +
   geom_line(aes(y = v1, color = "v1"), linetype = "dashed") +
   geom_point(aes(y = v1, color = "v1"), size = 2) +
@@ -331,7 +340,6 @@ We can see that the transition probabilities of $v_1$ and $v_2$ converge when
  increase. For similar networks like $v_1$, the probability to transit into them
  increases as we increase $\lambda$.
 
-
 # Problem 22: Mixture NEMs
 
 ## Subproblem 1
@@ -339,18 +347,18 @@ We can see that the transition probabilities of $v_1$ and $v_2$ converge when
 Determine cellular perturbation map $\rho$ where $\rho_{ic} = 1$ if cell $c$
  is perturbed by a knowdown of S-gene $i$.
 
-```{r}
+```{r name_genes_and_cells}
 S_genes <- c("S1", "S2")
 E_genes <- c("E1", "E2")
 cells   <- c("C1", "C2", "C3", "C4")
 ```
 
-```{r}
+```{r init_rho}
 rho = array(dim = c(2, 4),
             dimnames = list(S_genes, cells))
-#                C1, C2, C3, C4
-rho["S1", ] <- c( 1,  0,  1,  0)
-rho["S2", ] <- c( 0,  1,  1,  1)
+#               C1, C2, C3, C4
+rho["S1",] <- c(1,  0,  1,  0)
+rho["S2",] <- c(0,  1,  1,  1)
 rho
 ```
 
@@ -364,19 +372,19 @@ Assume $\{C_1, C_2\}$ are generated from $F_1$ and $\{C_3, C_4\}$ are generated
 
 Of course need to define $\Phi$ and $\Theta$ again for $F_1$ and $F_2$.
 
-```{r}
+```{r define_phi_theta_1}
 phi_1 <- array(dim = c(2, 2), dimnames = list(S_genes, S_genes))
-#                  S1, S2
-phi_1["S1", ] <- c( 1,  1)
-phi_1["S2", ] <- c( 0,  1)
+#                 S1, S2
+phi_1["S1",] <- c(1,  1)
+phi_1["S2",] <- c(0,  1)
 
 theta_1 <- array(dim = c(2, 2), dimnames = list(S_genes, E_genes))
-#                    E1, E2
-theta_1["S1", ] <- c( 1,  0)
-theta_1["S2", ] <- c( 0,  1)
+#                   E1, E2
+theta_1["S1",] <- c(1,  0)
+theta_1["S2",] <- c(0,  1)
 ```
 
-```{r}
+```{r define_phi_theta_2}
 phi_2 <- array(dim = c(2, 2), dimnames = list(S_genes, S_genes))
 #                  S1, S2
 phi_2["S1", ] <- c( 1,  0)
@@ -388,12 +396,13 @@ theta_2["S1", ] <- c( 0,  1)
 theta_2["S2", ] <- c( 1,  0)
 ```
 
-```{r}
+```{r compute_EEP_1}
 EEP_1 <- t(t(rho) %*% phi_1 %*% theta_1)
 EEP_1[EEP_1 > 1] <- 1
 EEP_1
 ```
-```{r}
+
+```{r compute_EEP_2}
 EEP_2 <- t(t(rho) %*% phi_2 %*% theta_2)
 EEP_2[EEP_2 > 1] <- 1
 EEP_2
@@ -401,7 +410,7 @@ EEP_2
 
 ### (b) Extract the corresponding colum from the expected effect patterns and put it into $R$
 
-```{r}
+```{r compute_R}
 # C1, C2 from F1; C3, C4 from F2
 R <- cbind(EEP_1[, 1:2], EEP_2[, 3:4])
 R[R == 0] <- -1
@@ -413,27 +422,25 @@ R
 Calculate the responsibilities $\Gamma$ given mixture weights $\pi = (0.44, 0.56)$.
  Then update the mixture weights. (Well, EM again!)
 
-```{r}
+```{r init_pi}
 pi <- c(0.44, 0.56)
 ```
 
-```{r}
+```{r compute_gamma}
 # log likelihood
 L1 <- t(EEP_1) %*% R
 L2 <- t(EEP_2) %*% R
 
-gamma <- rbind(
-  diag(pi[1] * exp(L1) / (pi[1] * exp(L1) + pi[2] * exp(L2))),
-  diag(pi[2] * exp(L2) / (pi[1] * exp(L1) + pi[2] * exp(L2)))
-)
+gamma <- rbind(diag(pi[1] * exp(L1) / (pi[1] * exp(L1) + pi[2] * exp(L2))),
+               diag(pi[2] * exp(L2) / (pi[1] * exp(L1) + pi[2] * exp(L2))))
 gamma
 ```
 
-```{r}
-pi[1] <- mean(gamma[1, ])
-pi[2] <- mean(gamma[2, ])
+```{r update_pi}
+pi[1] <- mean(gamma[1,])
+pi[2] <- mean(gamma[2,])
 ```
 
-```{r}
+```{r print_pi}
 pi
 ```
