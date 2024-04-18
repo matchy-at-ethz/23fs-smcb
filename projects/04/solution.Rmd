@@ -28,9 +28,6 @@ knitr::opts_chunk$set(engine.path = list(
 
 Problem 8-10 are all based on the MSA below:
 
-```{r}
-
-```
 
 ```{=latex}
 \setlength{\tabcolsep}{10pt} % Default value: 6pt
