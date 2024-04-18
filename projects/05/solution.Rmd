@@ -71,6 +71,7 @@ $$
 $$
 \end{proof}
 ```
+
 # Problem 13: Phylogenetic trees as Bayesian networks
 
 ## 1. What is the joint probability $P(X, Z|T)$ of the tree?
@@ -135,12 +136,26 @@ and K80 model.
 ```{r create_ini_tree}
 set.seed(42)
 tree.ini <- NJ(dist.dna(data, model = "K80"))
+tree.ini.TN93 <- NJ(dist.dna(data, model = "TN93"))
+tree.ini.JC69 <- NJ(dist.dna(data, model = "JC69"))
 ```
 
-Plot the initial tree.
+```{r print_ini_tree}
+tree.ini
+```
 
-```{r plot_initial_tree, fig.width=10, fig.height=5}
+Plot the initial trees.
+
+```{r plot_initial_tree, fig.cap="Initial tree with K80 model", fig.width=10, fig.height=5}
 plot.phylo(tree.ini)
+```
+
+```{r plot_initial_tree_TN93, fig.cap="Initial tree with TN93 model", fig.width=10, fig.height=5}
+plot.phylo(tree.ini.TN93)
+```
+
+```{r plot_initial_tree_JC69, fig.cap="Initial tree with JC69 model", fig.width=10, fig.height=5}
+plot.phylo(tree.ini.JC69)
 ```
 
 ```{r fit_k80_model}
