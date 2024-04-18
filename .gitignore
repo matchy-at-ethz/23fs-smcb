@@ -345,4 +345,5 @@ TSWLatexianTemp*
 
 # ignore pdfs that are not solution.pdf
 *.pdf
+!Project*.pdf
 !solution.pdf
