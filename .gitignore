@@ -342,3 +342,7 @@ TSWLatexianTemp*
 
 # also ignore .tex files
 *.tex
+
+# ignore pdfs that are not solution.pdf
+*.pdf
+!solution.pdf
