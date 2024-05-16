@@ -1,16 +1,16 @@
 ---
 title: "Project 10 Structured sparsity in genetics"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
 mainfont: "KpRoman"
-monofont: "Fira Code Regular Nerd Font Complete"
+# monofont: "Fira Code Regular Nerd Font Complete"
 output:
   pdf_document:
     latex_engine: xelatex
     extra_dependencies:  [ "amsmath", "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r, include=FALSE}
+```{r deps, include=FALSE}
 library(caret)
 library(glmnet)
 library(pROC)
@@ -22,11 +22,9 @@ library(doRNG)
 
 # Problem 28: Uniqueness of predictions from the lasso
 
-\begin{proof}
+We'll prove by contradiction.
 
-To prove that $\mathbf{X} \hat{\beta}_1 = \mathbf{X} \hat{\beta}_2$,
- it's equivalent to prove $\hat{\beta}_1 = \hat{\beta}_2$. We'll prove
- by contradiction.
+Suppose $\mathbf{X} \hat{\beta}_1 \neq \mathbf{X} \hat{\beta}_2$.
 
 Let the solution set be denoted as $S$, we have $\hat{\beta}_1, \hat{\beta}_2 \in S$.
 
@@ -35,6 +33,7 @@ Since $S$ is convex, we also have $\alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}
 So that we have:
 
 \begin{equation} \label{eq:1}
+\begin{aligned}
 \frac{1}{2}
 \left\lVert\
   \mathbf{y} - \mathbf{X} \left(
@@ -43,7 +42,17 @@ So that we have:
 \right\rVert_2^2 +
 \lambda \left\lVert
 \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
-\right\rVert_1 = c^*
+\right\rVert_1 &= c^* \\
+\frac{1}{2}
+\left\lVert\
+  \mathbf{y} - \left(
+    \alpha\mathbf{X}\hat{\beta}_1 + (1 - \alpha)\mathbf{X}\hat{\beta}_2
+  \right)
+\right\rVert_2^2 +
+\lambda \left\lVert
+  \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
+\right\rVert_1 &= c^*
+\end{aligned}
 \end{equation}
 
 Define the loss function as $f: S \mapsto \lVert \mathbf{y} - \mathbf{X} \beta \rVert_2^2$.
@@ -94,21 +103,30 @@ f\left(
 Just a re-write:
 
 \begin{equation} \label{eq:4}
+\begin{aligned}
 \frac{1}{2}
 f\left(
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right) + \lambda \left\lVert
   \alpha\hat{\beta}_1 + (1 - \alpha)\hat{\beta}_2
 \right\rVert_1
-< c^*
+&< c^* \\
+\frac{1}{2}
+\left\lVert\
+  \mathbf{y} -\left(
+    \alpha \mathbf{X} \hat{\beta}_1 + 
+    (1 - \alpha) \mathbf{X} \hat{\beta}_2
+  \right)
+\right\rVert_2^2 +
+\lambda \left\lVert
+  \alpha\hat{\beta}_1 + 
+  (1 - \alpha)\hat{\beta}_2
+\right\rVert_1 &< c^*
+\end{aligned}
 \end{equation}
 
 Equation \ref{eq:4} contradicts with Equation \ref{eq:1}, which suggests that
- our assumption $\hat{\beta}_1 \neq \hat{\beta}_2$ is wrong.
-
-\end{proof}
-
-\pagebreak
+ our assumption $\mathbf{X} \hat{\beta}_1 \neq \mathbf{X} \hat{\beta}_2$ is wrong.
 
 # Problem 29: Ridge regression solution
 
@@ -184,20 +202,18 @@ which is just the ridge regression solution.
 
 ## Load data and split into training and test set
 
-```{r}
+```{r load_data}
 # load data
 set.seed(42)
 load("yeastStorey.rda")
 ```
 
-```{r}
+```{r split_train_test}
 sample <- createDataPartition(data$Marker, p = 0.7, list = FALSE)
 
 train <- data[sample, ]
 test  <- data[-sample, ]
-```
 
-```{r}
 X_train <- as.matrix(train[, -1])
 y_train <- train[,  1]
 
@@ -208,44 +224,50 @@ y_test  <- test[,  1]
 
 ## Do 10-fold cross validation
 
-```{r}
+```{r set_alpha_search_space}
 alphas <- seq(0, 1, 0.1)
 ```
 
-```{r}
+```{r find_optimal}
 foldid <- sample(1:10, size = length(sample), replace = TRUE)
 
 num_cores <- detectCores()
 registerDoParallel(num_cores)
 start <- Sys.time()
-res <- foreach (alpha = alphas, .combine = c, .options.RNG = 42) %dorng% {
-  cv_res <- cv.glmnet(X_train, y_train, alpha = alpha,
-                      family = "binomial", foldid = foldid,
-                      type.measure = "mse")
+res <- foreach (
+  alpha = alphas,
+  .combine = c,
+  .options.RNG = 42,
+  .packages = c('glmnet')
+) %dorng% {
+  cv_res <- cv.glmnet(
+    X_train,
+    y_train,
+    alpha = alpha,
+    family = "binomial",
+    foldid = foldid,
+    type.measure = "mse"
+  )
   list(cv_res)
 }
 end <- Sys.time()
 end - start
 stopImplicitCluster()
 ```
-```{r}
-df <- do.call(rbind,
-              lapply(1:length(alphas),
-                     function(x) {
-                      cbind.data.frame(alphas[x],
-                                       res[[x]]$lambda,
-                                       res[[x]]$cvm)
-                     })
-              )
+
+```{r combine_res_into_df}
+df <- do.call(rbind, lapply(1:length(alphas), function(x) {
+  cbind.data.frame(alphas[x], res[[x]]$lambda, res[[x]]$cvm)
+}))
 colnames(df) <- c("alpha", "lambda", "cvm")
 ```
 
-```{r}
+```{r get_optim}
 param <- filter(df, cvm == min(cvm))
 param
 ```
 
-For the optimal $\alpha$ (here $\alpha = 1$)...
+For the optimal $\alpha$ (here is `r param$alpha`)...
 
 ```{r}
 opt_idx <- which(alphas == param$alpha)
@@ -254,45 +276,48 @@ res.opt_alpha <- res[[opt_idx]]
 
 Plot the mean cross-validated error as a function of $\log \lambda$.
 
-```{r}
+```{r plot_opt_alpha}
 plot(res.opt_alpha)
 ```
 Plot the trace curve of coefficients as a function of $\log \lambda$.
 
-```{r}
+```{r plot_trace}
 plot(res.opt_alpha$glmnet.fit, "lambda", label=TRUE)
 ```
 
 ## Fit the final model and predict the response
 
-```{r}
-model <- glmnet(X_train, y_train,
-                alpha = param$alpha,
-                family = "binomial",
-                lambda = param$lambda)
+```{r fit_model}
+model <- glmnet(
+  X_train,
+  y_train,
+  alpha = param$alpha,
+  family = "binomial",
+  lambda = param$lambda
+)
 ```
 
-```{r}
+```{r make_predictoin}
 prob <- predict(model, newx = X_test, type = "response")
 y_pred <- ifelse(prob > 0.5, 1, 0)
 ```
 
 Report the varaibles selected.
 
-```{r}
+```{r report_val_selected}
 selected <- coef(res.opt_alpha, param$lambda)
 selected@Dimnames[[1]][selected@i]
 ```
 
 Plot ROC...
 
-```{r}
+```{r plot_roc}
 test_roc <- roc(y_test, as.vector(y_pred))
 plot(test_roc)
 ```
 
 ... and report the corresponding AUC.
 
-```{r}
+```{r report_auc}
 test_roc$auc
 ```
