@@ -1,16 +1,15 @@
 ---
 title: "Project 11 NMF and multi-omics data integration"
 date:  "`r format(Sys.time(), '%B %d, %Y')`"
-author: "Team K - Minghang Li"
+author: "Team C - Minghang Li, Xiaocheng Yang, Xinyi Chen"
 mainfont: "KpRoman"
-monofont: "Fira Code Regular Nerd Font Complete"
 output:
   pdf_document:
     latex_engine: xelatex
     extra_dependencies:  [ "amsthm", "amssymb", "cancel", "unicode-math" ]
 ---
 
-```{r, include=FALSE}
+```{r dependencies, include=FALSE}
 library(NMF)
 library(foreach)
 library(doParallel)
@@ -55,14 +54,14 @@ So that $WH = \tilde{W}\tilde{H}$ but $W \neq \tilde{W}$ and $H \neq \tilde{H}$.
 
 ## Subproblem 1
 
-```{r}
+```{r load_data}
 # load DrosophilaExpressions.rda
 load("DrosophilaExpressions.rda")
 ```
 
 Display the first 16 observations as elliptical images.
 
-```{r}
+```{r display_16_obs}
 imageBatchDisplay(V[, 1:16])
 ```
 
@@ -144,7 +143,7 @@ imageBatchDisplay(
 # Problem 33: Implementing NMF from scratch
 
 ```{r}
-NMF <- function(V, k, 
+NMF <- function(V, k,
                 W = NULL, H = NULL, max_iter = 10000,
                 seed = 42) {
   set.seed(seed)
@@ -153,11 +152,11 @@ NMF <- function(V, k,
   if (is.null(W)) {
     W <- matrix(runif(M * k), nrow = M, ncol = k)
   }
-  
+
   if (is.null(H)) {
     H <- matrix(runif(k * N), nrow = k, ncol = N)
   }
-  
+
   W_new <- W
   H_new <- H
   to_log <- V /(W %*% H)
@@ -167,7 +166,7 @@ NMF <- function(V, k,
   all_kl <- foreach (iter=1:max_iter, .combine = c) %do% {
     H_new <- H * (t(W) %*% (V/(W %*% H))) / (colSums(W))
     W_new <- W * ((V/(W %*% H_new)) %*% t(H_new)) / (rowSums(H_new))
-    
+
     to_log <- V /(W_new %*% H_new)
     to_log <- ifelse(to_log != 0, log(to_log), 0)
     kl_div <- sum(V * to_log - V + W_new %*% H_new)
@@ -177,7 +176,7 @@ NMF <- function(V, k,
     H <- H_new
     kl_div
   }
-  
+
   return(list(V.hat=W_new %*% H_new, W=W_new, H=H_new, KLdiv=kl_div, allKL=all_kl))
 }
 ```
